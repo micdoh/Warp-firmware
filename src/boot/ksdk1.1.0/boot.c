@@ -61,7 +61,7 @@
 #include "errstrs.h"
 #include "gpio_pins.h"
 #include "SEGGER_RTT.h"
-
+#include "devSSD1331.h"
 
 #define							kWarpConstantStringI2cFailure		"\rI2C failed, reg 0x%02x, code %d\n"
 #define							kWarpConstantStringErrorInvalidVoltage	"\rInvalid supply voltage [%d] mV!"
@@ -2017,11 +2017,14 @@ main(void)
 		}
 	#endif
 
+    warpPrint("INITIALIZING DISPLAY");
+	devSSD1331init(); /* Initialize SSD1331 OLED Display */
+
 	while (1)
 	{
 		/*
 		 *	Do not, e.g., lowPowerPinStates() on each iteration, because we actually
-		 *	want to use menu to progressiveley change the machine state with various
+		 *	want to use menu to progressively change the machine state with various
 		 *	commands.
 		 */
 		printBootSplash(gWarpCurrentSupplyVoltage, menuRegisterAddress, &powerManagerCallbackStructure);
