@@ -1,6 +1,6 @@
 #!/bin/sh
 	
-	# Uncomment this to set ARMGCC_DIR correctly: export ARMGCC_DIR=<full path to arm-gcc directory>
+	export ARMGCC_DIR=/Users/michaeldoherty/git/bare-metal-arm/gcc-arm
 
 	mkdir -p work
 	mkdir -p work/boards/Warp
@@ -36,6 +36,7 @@
 	cp ../../src/boot/ksdk1.1.0/startup_MKL03Z4.S			work/platform/startup/MKL03Z4/gcc/startup_MKL03Z4.S
 	cp ../../src/boot/ksdk1.1.0/gpio_pins.c				work/boards/Warp
 	cp ../../src/boot/ksdk1.1.0/gpio_pins.h				work/boards/Warp
+	cp ../../src/boot/ksdk1.1.0/devSSD1331.*                        work/demos/Warp/src/
 
 	cd work/lib/ksdk_platform_lib/armgcc/KL03Z4 && ./clean.sh; ./build_release.sh
 	cd ../../../../demos/Warp/armgcc/Warp && ./clean.sh; ./build_release.sh
