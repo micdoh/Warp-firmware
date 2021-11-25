@@ -63,6 +63,9 @@
 #include "SEGGER_RTT.h"
 #include "devSSD1331.h"
 
+#include "devINA219.h"
+volatile WarpI2CDeviceState		deviceINA219State;
+
 #define							kWarpConstantStringI2cFailure		"\rI2C failed, reg 0x%02x, code %d\n"
 #define							kWarpConstantStringErrorInvalidVoltage	"\rInvalid supply voltage [%d] mV!"
 #define							kWarpConstantStringErrorSanity		"\rSanity check failed!"
@@ -130,7 +133,7 @@
 	volatile WarpI2CDeviceState			deviceL3GD20HState;
 #endif
 
-#if (WARP_BUILD_ENABLE_DEVBME680)
+#if (WARP_BUILD_ENABLE_DEV)
 	#include "devBME680.h"
 	volatile WarpI2CDeviceState			deviceBME680State;
 	volatile uint8_t				deviceBME680CalibrationValues[kWarpSizesBME680CalibrationValuesCount];
@@ -175,7 +178,6 @@
 	#include "devBGX.h"
 	volatile WarpUARTDeviceState			deviceBGXState;
 #endif
-
 
 volatile i2c_master_state_t				i2cMasterState;
 volatile spi_master_state_t				spiMasterState;
@@ -2017,8 +2019,38 @@ main(void)
 		}
 	#endif
 
-    warpPrint("INITIALIZING DISPLAY");
 	devSSD1331init(); /* Initialize SSD1331 OLED Display */
+
+	initINA219(0x40 /* i2cAddress */, 3300 /* Operating voltage (mV) */);
+
+    /* Configuration value 0b000001000101:
+        - 0-16V
+        - PGA Gain 1
+        - +/- 40mV range
+        - 12-bit ADC resolution
+        - 532 us conversion time
+        - 1 sample per measurement
+    */
+
+    status = writeSensorRegisterINA219(0x00, 0b000001000101);
+    if (status != kWarpStatusOK)
+    {
+        warpPrint("\rINA219 configuration failed...\n");
+    }
+
+    /* Checking register values */
+	printSensorDataINA219(false, 0x00);  // Configuration
+    printSensorDataINA219(false, 0x01);  // Shunt voltage
+    printSensorDataINA219(false, 0x02);  // Bus Voltage
+    printSensorDataINA219(false, 0x03);  // Power
+    printSensorDataINA219(false, 0x04);  // Current
+    printSensorDataINA219(false, 0x05);  // Calibration
+
+    /* Print 1000 current (mA) readings */
+    for (int i = 0; i < 1000; i++)
+    {
+        printSensorDataINA219(true, 0x01);  // Read V_shunt and convert to current (R=0.1 Ohm)
+    }
 
 	while (1)
 	{
@@ -2250,78 +2282,86 @@ main(void)
 						}
 					#endif
 
-#if (WARP_BUILD_ENABLE_DEVSI7021)
-					case '9':
-					{
-						menuTargetSensor = kWarpSensorSI7021;
-						menuI2cDevice = &deviceSI7021State;
-						break;
-					}
-#endif
-#if (WARP_BUILD_ENABLE_DEVL3GD20H)
-					case 'a':
-					{
-						menuTargetSensor = kWarpSensorL3GD20H;
-						menuI2cDevice = &deviceL3GD20HState;
-						break;
-					}
-#endif
-#if (WARP_BUILD_ENABLE_DEVBME680)
-					case 'b':
-					{
-						menuTargetSensor = kWarpSensorBME680;
-						menuI2cDevice = &deviceBME680State;
-						break;
-					}
-#endif
-#if (WARP_BUILD_ENABLE_DEVTCS34725)
-					case 'd':
-					{
-						menuTargetSensor = kWarpSensorTCS34725;
-						menuI2cDevice = &deviceTCS34725State;
-						break;
-					}
-#endif
-#if (WARP_BUILD_ENABLE_DEVSI4705)
-					case 'e':
-					{
-						menuTargetSensor = kWarpSensorSI4705;
-						menuI2cDevice = &deviceSI4705State;
-						break;
-					}
-#endif
-#if (WARP_BUILD_ENABLE_DEVCCS811)
-					case 'g':
-					{
-						menuTargetSensor = kWarpSensorCCS811;
-						menuI2cDevice = &deviceCCS811State;
-						break;
-					}
-#endif
-#if (WARP_BUILD_ENABLE_DEVAMG8834)
-					case 'h':
-					{
-						menuTargetSensor = kWarpSensorAMG8834;
-						menuI2cDevice = &deviceAMG8834State;
-						break;
-					}
-#endif
-#if (WARP_BUILD_ENABLE_DEVAS7262)
-					case 'j':
-					{
-						menuTargetSensor = kWarpSensorAS7262;
-						menuI2cDevice = &deviceAS7262State;
-						break;
-					}
-#endif
-#if (WARP_BUILD_ENABLE_DEVAS7263)
-					case 'k':
-					{
-						menuTargetSensor = kWarpSensorAS7263;
-						menuI2cDevice = &deviceAS7263State;
-						break;
-					}
-#endif
+                    #if (WARP_BUILD_ENABLE_DEVSI7021)
+                        case '9':
+                        {
+                            menuTargetSensor = kWarpSensorSI7021;
+                            menuI2cDevice = &deviceSI7021State;
+                            break;
+                        }
+                    #endif
+
+                    #if (WARP_BUILD_ENABLE_DEVL3GD20H)
+                        case 'a':
+                        {
+                            menuTargetSensor = kWarpSensorL3GD20H;
+                            menuI2cDevice = &deviceL3GD20HState;
+                            break;
+                        }
+                    #endif
+
+                    #if (WARP_BUILD_ENABLE_DEVBME680)
+                        case 'b':
+                        {
+                            menuTargetSensor = kWarpSensorBME680;
+                            menuI2cDevice = &deviceBME680State;
+                            break;
+                        }
+                    #endif
+
+                    #if (WARP_BUILD_ENABLE_DEVTCS34725)
+                        case 'd':
+                        {
+                            menuTargetSensor = kWarpSensorTCS34725;
+                            menuI2cDevice = &deviceTCS34725State;
+                            break;
+                        }
+                    #endif
+
+                    #if (WARP_BUILD_ENABLE_DEVSI4705)
+                        case 'e':
+                        {
+                            menuTargetSensor = kWarpSensorSI4705;
+                            menuI2cDevice = &deviceSI4705State;
+                            break;
+                        }
+                    #endif
+
+                    #if (WARP_BUILD_ENABLE_DEVCCS811)
+                        case 'g':
+                        {
+                            menuTargetSensor = kWarpSensorCCS811;
+                            menuI2cDevice = &deviceCCS811State;
+                            break;
+                        }
+                    #endif
+
+                    #if (WARP_BUILD_ENABLE_DEVAMG8834)
+                        case 'h':
+                        {
+                            menuTargetSensor = kWarpSensorAMG8834;
+                            menuI2cDevice = &deviceAMG8834State;
+                            break;
+                        }
+                    #endif
+
+                    #if (WARP_BUILD_ENABLE_DEVAS7262)
+                        case 'j':
+                        {
+                            menuTargetSensor = kWarpSensorAS7262;
+                            menuI2cDevice = &deviceAS7262State;
+                            break;
+                        }
+                    #endif
+
+                    #if (WARP_BUILD_ENABLE_DEVAS7263)
+                        case 'k':
+                        {
+                            menuTargetSensor = kWarpSensorAS7263;
+                            menuI2cDevice = &deviceAS7263State;
+                            break;
+                        }
+                    #endif
 					default:
 					{
 						warpPrint("\r\tInvalid selection '%c' !\n", key);
@@ -2981,15 +3021,14 @@ loopForSensor(	const char *  tagString,
 		bool  chatty
 		)
 {
-	WarpStatus		status;
-	uint8_t			address = min(minAddress, baseAddress);
+	WarpStatus	status;
+	uint8_t		address = min(minAddress, baseAddress);
 	int			readCount = repetitionsPerAddress + 1;
 	int			nSuccesses = 0;
 	int			nFailures = 0;
 	int			nCorrects = 0;
 	int			nBadCommands = 0;
-	uint16_t		actualSssupplyMillivolts = sssupplyMillivolts;
-
+	uint16_t	actualSssupplyMillivolts = sssupplyMillivolts;
 
 	if (	(!spiDeviceState && !i2cDeviceState) ||
 		(spiDeviceState && i2cDeviceState) )
@@ -3043,9 +3082,11 @@ loopForSensor(	const char *  tagString,
 
 					if (chatty)
 					{
-						warpPrint("\r\t0x%02x --> 0x%02x\n",
+						warpPrint("\r\t0x%02x --> 0x%02x 0x%02x\n",
 							address+j,
-							i2cDeviceState->i2cBuffer[0]);
+							i2cDeviceState->i2cBuffer[0],
+							i2cDeviceState->i2cBuffer[1]
+							);
 					}
 				}
 			}

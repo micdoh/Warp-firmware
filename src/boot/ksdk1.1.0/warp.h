@@ -88,6 +88,7 @@ typedef enum
 	kWarpSensorAS7262,
 	kWarpSensorAS7263,
 	kWarpSensorSCD30,
+	kWarpSensorINA219,
 } WarpSensorDevice;
 
 typedef enum
@@ -270,7 +271,7 @@ typedef struct
 	bool			isInitialized;
 
 	/*
-	 *	For holding the SPI CS I/O pin idnetifier to make
+	 *	For holding the SPI CS I/O pin identifier to make
 	 *	the driver independent of board config.
 	 */
 	int			chipSelectIoPinID;

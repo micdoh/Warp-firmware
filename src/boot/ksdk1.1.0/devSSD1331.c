@@ -36,10 +36,8 @@ writeCommand(uint8_t commandByte)
 	 *
 	 *	Make sure there is a high-to-low transition by first driving high, delay, then drive low.
 	 */
-	SEGGER_RTT_WriteString(0, "\r\n\tDriving CS high...\n");
 	GPIO_DRV_SetPinOutput(kSSD1331PinCSn);
 	OSA_TimeDelay(10);
-	SEGGER_RTT_WriteString(0, "\r\n\tDriving CS low...\n");
 	GPIO_DRV_ClearPinOutput(kSSD1331PinCSn);
 
 	/*
@@ -157,25 +155,23 @@ devSSD1331init(void)
 	writeCommand(0x3F);
 	SEGGER_RTT_WriteString(0, "\r\n\tDone with screen clear...\n");
 
-
 	/*
 	 *	Read the manual for the SSD1331 (SSD1331_1.2.pdf) to figure
 	 *	out how to fill the entire screen with the brightest shade
 	 *	of green.
 	 */
-	 writeCommand(0x22);
-	 writeCommand(0x03);
-	 writeCommand(0x12);
-	 writeCommand(0x15);
-	 writeCommand(0);
-	 writeCommand(0x3F);
-	 writeCommand(0);
-	 writeCommand(0);
-	 writeCommand(0x3F);
-	 writeCommand(0);
-
-	SEGGER_RTT_WriteString(0, "\r\n\tDone with draw rectangle...\n");
-
+	writeCommand(kSSD1331CommandDRAWRECT);  // Initiate "draw rectangle" mode
+    writeCommand(0x00);                     // Start column
+    writeCommand(0x00);                     // Start row
+    writeCommand(0x5F);                     // End column
+    writeCommand(0x3F);                     // End row
+    writeCommand(0x00);                     // Outline blue contrast
+    writeCommand(0xFF);                     // Outline green contrast (max)
+    writeCommand(0x00);                     // Outline red contrast
+    writeCommand(0x00);                     // Fill blue contrast
+    writeCommand(0xFF);                     // Fill green contrast
+    writeCommand(0x00);                     // Fill red contrast
+    SEGGER_RTT_WriteString(0, "\r\n\tDone with draw rectangle...\n");
 
 	return 0;
 }
