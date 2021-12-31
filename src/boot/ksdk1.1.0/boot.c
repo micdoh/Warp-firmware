@@ -71,61 +71,9 @@ volatile WarpI2CDeviceState		deviceINA219State;
 #define							kWarpConstantStringErrorSanity		"\rSanity check failed!"
 
 
-#if (WARP_BUILD_ENABLE_DEVADXL362)
-	#include "devADXL362.h"
-	volatile WarpSPIDeviceState			deviceADXL362State;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVIS25xP)
-	#include "devIS25xP.h"
-	volatile WarpSPIDeviceState			deviceIS25xPState;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVISL23415)
-	#include "devISL23415.h"
-	volatile WarpSPIDeviceState			deviceISL23415State;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVAT45DB)
-	#include "devAT45DB.h"
-	volatile WarpSPIDeviceState			deviceAT45DBState;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVICE40)
-	#include "devICE40.h"
-	volatile WarpSPIDeviceState			deviceICE40State;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVBMX055)
-	#include "devBMX055.h"
-	volatile WarpI2CDeviceState			deviceBMX055accelState;
-	volatile WarpI2CDeviceState			deviceBMX055gyroState;
-	volatile WarpI2CDeviceState			deviceBMX055magState;
-#endif
-
 #if (WARP_BUILD_ENABLE_DEVMMA8451Q)
 	#include "devMMA8451Q.h"
 	volatile WarpI2CDeviceState			deviceMMA8451QState;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVLPS25H)
-	#include "devLPS25H.h"
-	volatile WarpI2CDeviceState			deviceLPS25HState;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVHDC1000)
-	#include "devHDC1000.h"
-	volatile WarpI2CDeviceState			deviceHDC1000State;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVMAG3110)
-	#include "devMAG3110.h"
-	volatile WarpI2CDeviceState			deviceMAG3110State;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVSI7021)
-	#include "devSI7021.h"
-	volatile WarpI2CDeviceState			deviceSI7021State;
 #endif
 
 #if (WARP_BUILD_ENABLE_DEVL3GD20H)
