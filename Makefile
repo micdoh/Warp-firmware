@@ -19,7 +19,7 @@ warp:
 	cp src/boot/ksdk1.1.0/gpio_pins.h				build/ksdk1.1/work/boards/Warp
 	cp src/boot/ksdk1.1.0/config.h					build/ksdk1.1/work/boards/Warp
 	cp src/boot/ksdk1.1.0/glaux.h					build/ksdk1.1/work/boards/Warp
-	cp src/boot/ksdk1.1.0/CMakeLists-Warp.txt		build/ksdk1.1/work/demos/Warp/armgcc/Warp/CMakeLists.txt
+	cp src/boot/ksdk1.1.0/CMakeLists.txt		build/ksdk1.1/work/demos/Warp/armgcc/Warp/CMakeLists.txt
 	cp src/boot/ksdk1.1.0/devMMA8451Q.*				build/ksdk1.1/work/demos/Warp/src/
 	cp src/boot/ksdk1.1.0/devL3GD20H.*				build/ksdk1.1/work/demos/Warp/src/
 	cp src/boot/ksdk1.1.0/devSSD1331.*				build/ksdk1.1/work/demos/Warp/src/
