@@ -142,6 +142,6 @@ typedef enum
 	 */
 	kWarpDefaultSupplyVoltageMillivolts			= 1800,
 	kWarpDefaultSupplyVoltageMillivoltsMMA8451Q		= 1800,
-	kWarpDefaultSupplyVoltageMillivoltsL3GD20H		= 1800,
+	kWarpDefaultSupplyVoltageMillivoltsL3GD20H		= 1800
 
 } WarpDefaults;
