@@ -155,23 +155,126 @@ devSSD1331init(void)
 	writeCommand(0x3F);
 	SEGGER_RTT_WriteString(0, "\r\n\tDone with screen clear...\n");
 
-	/*
-	 *	Read the manual for the SSD1331 (SSD1331_1.2.pdf) to figure
-	 *	out how to fill the entire screen with the brightest shade
-	 *	of green.
-	 */
-	writeCommand(kSSD1331CommandDRAWRECT);  // Initiate "draw rectangle" mode
-    writeCommand(0x00);                     // Start column
-    writeCommand(0x00);                     // Start row
-    writeCommand(0x5F);                     // End column
-    writeCommand(0x3F);                     // End row
-    writeCommand(0x00);                     // Outline blue contrast
-    writeCommand(0xFF);                     // Outline green contrast (max)
-    writeCommand(0x00);                     // Outline red contrast
-    writeCommand(0x00);                     // Fill blue contrast
-    writeCommand(0xFF);                     // Fill green contrast
-    writeCommand(0x00);                     // Fill red contrast
-    SEGGER_RTT_WriteString(0, "\r\n\tDone with draw rectangle...\n");
 
 	return 0;
 }
+
+
+int
+drawRect(uint8_t startCol, uint8_t startRow, uint8_t endCol, uint8_t endRow, uint8_t r, uint8_t g, uint8_t b) {
+    /*
+     *	Initialise the
+     */
+    writeCommand(kSSD1331CommandDRAWRECT);  // Initiate "draw rectangle" mode
+    writeCommand(startCol);              // Start column
+    writeCommand(startRow);              // Start row
+    writeCommand(endCol);                // End column
+    writeCommand(endRow);                // End row
+    writeCommand(r);                     // Outline blue contrast
+    writeCommand(g);                     // Outline green contrast (max)
+    writeCommand(b);                     // Outline red contrast
+    writeCommand(r);                     // Fill blue contrast
+    writeCommand(g);                     // Fill green contrast
+    writeCommand(b);                     // Fill red contrast
+
+    return 0;
+}
+
+int
+drawLine(uint8_t startCol, uint8_t startRow, uint8_t endCol, uint8_t endRow, uint8_t r, uint8_t g, uint8_t b) {
+    /*
+     *	Initialise the
+     */
+    writeCommand(kSSD1331CommandDRAWLINE);  // Initiate "draw rectangle" mode
+    writeCommand(startCol);              // Start column
+    writeCommand(startRow);              // Start row
+    writeCommand(endCol);                // End column
+    writeCommand(endRow);                // End row
+    writeCommand(r);                     // Outline red contrast
+    writeCommand(g);                     // Outline green contrast (max)
+    writeCommand(b);                     // Outline blue contrast
+
+    return 0;
+}
+
+/*int
+drawSection(uint8_t centreCol, uint8_t centreRow, uint8_t fontSize, bool horiz) {
+    if (horiz) {
+        drawLine(centreCol-fontSize, centreRow)
+    }
+}*/
+
+int
+devSSD1331drawGlyph(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b, uint8_t glyph) {
+
+    switch(glyph)
+    {
+        case 0:
+            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
+            drawRect(startCol+2, startRow+2, startCol+scale-2, startRow+scale+scale-2, r, g, b);
+            break;
+        case 1:
+            drawRect(startCol+scale-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
+            break;
+        case 2:
+            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
+            drawRect(startCol-1, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0);
+            drawRect(startCol+2, startRow+scale+2, startCol+scale+1, startRow+scale+scale-2, 0, 0, 0);
+            break;
+        case 3:
+            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
+            drawRect(startCol-1, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0);
+            drawRect(startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0);
+            break;
+        case 4:
+            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
+            drawRect(startCol+2, startRow-1, startCol+scale-2, startRow+scale-2, 0, 0, 0);
+            drawRect(startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale+1, 0, 0, 0);
+            break;
+        case 5:
+            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
+            drawRect(startCol+2, startRow+2, startCol+scale+1, startRow+scale-2, 0, 0, 0);
+            drawRect(startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0);
+            break;
+        case 6:
+            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
+            drawRect(startCol+2, startRow+2, startCol+scale+1, startRow+scale-2, 0, 0, 0);
+            drawRect(startCol+2, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0);
+            break;
+        case 7:
+            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
+            drawRect(startCol-1, startRow+2, startCol+scale-2, startRow+scale+scale+1, 0, 0, 0);
+            break;
+        case 8:
+            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
+            drawRect(startCol+2, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0);
+            drawRect(startCol+2, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0);
+            break;
+        case 9:
+            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
+            drawRect(startCol+2, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0);
+            drawRect(startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0);
+            break;
+    }
+    return 0;
+}
+/*
+case 8:
+drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+1, r, g, b); // ^-
+drawRect(startCol-1, startRow+scale-1, startCol+scale+1, startRow+scale+1, r, g, b); // -
+drawRect(startCol-1, startRow+scale+scale-1, startCol+scale+1, startRow+scale+scale+1, r, g, b); // _
+drawRect(startCol-1, startRow-1, startCol+1, startRow+scale+1, r, g, b); // ^<|
+drawRect(startCol+scale-1, startRow-1, startCol+scale+1, startRow+scale+1, r, g, b); // ^>|
+drawRect(startCol-1, startRow+scale-1, startCol+1, startRow+scale+scale+1, r, g, b); // <|
+drawRect(startCol+scale-1, startRow+scale-1, startCol+scale+1, startRow+scale+scale+1, r, g, b); //>|
+
+drawRect(startCol, startRow, startCol+scale, startRow, 0, 0, 0);
+drawRect(startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0);
+drawRect(startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0);
+drawRect(startCol, startRow, startCol, startRow+scale, 0, 0, 0);
+drawRect(startCol+scale, startRow, startCol+scale, startRow+scale, 0, 0, 0);
+drawRect(startCol, startRow+scale, startCol, startRow+scale+scale, 0, 0, 0);
+drawRect(startCol+scale, startRow+scale, startCol+scale, startRow+scale+scale, 0, 0, 0);
+break;
+*/
+

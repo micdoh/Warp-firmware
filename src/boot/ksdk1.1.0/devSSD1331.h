@@ -43,3 +43,4 @@ typedef enum
 } SSD1331Commands;
 
 int	devSSD1331init(void);
+int devSSD1331drawGlyph(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b, uint8_t glyph);

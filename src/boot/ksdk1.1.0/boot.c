@@ -1969,6 +1969,15 @@ main(void)
 	#endif
 
 	devSSD1331init(); /* Initialize SSD1331 OLED Display */
+    devSSD1331drawGlyph(0, 2, 6, 255, 255, 255, 1);
+    devSSD1331drawGlyph(10, 2, 6, 255, 255, 255, 2);
+    devSSD1331drawGlyph(20, 2, 6, 255, 255, 255, 3);
+    devSSD1331drawGlyph(30, 2, 6, 255, 255, 255, 4);
+    devSSD1331drawGlyph(40, 2, 6, 255, 255, 255, 5);
+    devSSD1331drawGlyph(50, 2, 6, 255, 255, 255, 6);
+    devSSD1331drawGlyph(60, 2, 6, 255, 255, 255, 7);
+    devSSD1331drawGlyph(70, 2, 6, 255, 255, 255, 8);
+    devSSD1331drawGlyph(80, 2, 6, 255, 255, 255, 9);
 
 	initINA219(0x40 /* i2cAddress */, 3300 /* Operating voltage (mV) */);
 
