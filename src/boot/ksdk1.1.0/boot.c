@@ -1332,7 +1332,7 @@ main(void)
 {
 	WarpStatus				status;
 	uint8_t					key;
-	WarpSensorDevice			menuTargetSensor		= kWarpSensorBMX055accel;
+	WarpSensorDevice			menuTargetSensor		= kWarpSensorL3GD20H;
 	volatile WarpI2CDeviceState *		menuI2cDevice			= NULL;
 	uint8_t					menuRegisterAddress		= 0x00;
 	rtc_datetime_t				warpBootDate;
@@ -1576,7 +1576,7 @@ main(void)
 
 	#if (WARP_BUILD_ENABLE_DEVL3GD20H)
 //		initL3GD20H(	0x6A	/* i2cAddress */,	&deviceL3GD20HState,		kWarpDefaultSupplyVoltageMillivoltsL3GD20H	);
-        initL3GD20H(	0x6A	/* i2cAddress */,	kWarpDefaultSupplyVoltageMillivoltsL3GD20H	);
+        initL3GD20H(	0x6B	/* i2cAddress */,	kWarpDefaultSupplyVoltageMillivoltsL3GD20H	);
 
 #endif
 
@@ -2055,16 +2055,16 @@ main(void)
 				warpPrint("\r\tSelect:\n");
 
 				#if (WARP_BUILD_ENABLE_DEVMMA8451Q)
-					warpPrint("\r\t- '5' MMA8451Q			(0x00--0x31): 1.95V -- 3.6V\n");
+					warpPrint("\r\t- '1' MMA8451Q			(0x00--0x31): 1.95V -- 3.6V\n");
 				#else
-					warpPrint("\r\t- '5' MMA8451Q			(0x00--0x31): 1.95V -- 3.6V (compiled out) \n");
+					warpPrint("\r\t- '1' MMA8451Q			(0x00--0x31): 1.95V -- 3.6V (compiled out) \n");
 				#endif
 
 
 				#if (WARP_BUILD_ENABLE_DEVL3GD20H)
-					warpPrint("\r\t- 'a' L3GD20H			(0x0F--0x39): 2.2V -- 3.6V\n");
+					warpPrint("\r\t- '2' L3GD20H			(0x0F--0x39): 2.2V -- 3.6V\n");
 				#else
-					warpPrint("\r\t- 'a' L3GD20H			(0x0F--0x39): 2.2V -- 3.6V (compiled out) \n");
+					warpPrint("\r\t- '2' L3GD20H			(0x0F--0x39): 2.2V -- 3.6V (compiled out) \n");
 				#endif
 
 
@@ -2076,7 +2076,7 @@ main(void)
 
 
 					#if (WARP_BUILD_ENABLE_DEVMMA8451Q)
-						case '5':
+						case '1':
 						{
 							menuTargetSensor = kWarpSensorMMA8451Q;
 							menuI2cDevice = &deviceMMA8451QState;
@@ -2085,7 +2085,7 @@ main(void)
 					#endif
 
                     #if (WARP_BUILD_ENABLE_DEVL3GD20H)
-                        case 'a':
+                        case '2':
                         {
                             menuTargetSensor = kWarpSensorL3GD20H;
                             menuI2cDevice = &deviceL3GD20HState;
@@ -2413,7 +2413,8 @@ main(void)
 			}
 
 			/*
-			 *	Simply spin for 10 seconds. Since the SWD pins should only be enabled when we are waiting for key at top of loop (or toggling after printf), during this time there should be no interference from the SWD.
+			 *	Simply spin for 10 seconds. Since the SWD pins should only be enabled when we are waiting for key at
+			 *	top of loop (or toggling after printf), during this time there should be no interference from the SWD.
 			 */
 			case 'x':
 			{
@@ -2717,34 +2718,6 @@ repeatRegisterReadForDeviceAndAddress(WarpSensorDevice warpSensorDevice, uint8_t
 {
 	switch (warpSensorDevice)
 	{
-		case kWarpSensorADXL362:
-		{
-			/*
-			 *	ADXL362: VDD 1.6--3.5
-			 */
-			#if (WARP_BUILD_ENABLE_DEVADXL362)
-				loopForSensor(	"\r\nADXL362:\n\r",		/*	tagString			*/
-						&readSensorRegisterADXL362,	/*	readSensorRegisterFunction	*/
-						NULL,				/*	i2cDeviceState			*/
-						&deviceADXL362State,		/*	spiDeviceState			*/
-						baseAddress,			/*	baseAddress			*/
-						0x00,				/*	minAddress			*/
-						0x2E,				/*	maxAddress			*/
-						repetitionsPerAddress,		/*	repetitionsPerAddress		*/
-						chunkReadsPerAddress,		/*	chunkReadsPerAddress		*/
-						spinDelay,			/*	spinDelay			*/
-						autoIncrement,			/*	autoIncrement			*/
-						sssupplyMillivolts,		/*	sssupplyMillivolts		*/
-						referenceByte,			/*	referenceByte			*/
-						adaptiveSssupplyMaxMillivolts,	/*	adaptiveSssupplyMaxMillivolts	*/
-						chatty				/*	chatty				*/
-						);
-			#else
-				warpPrint("\r\n\tADXL362 Read Aborted. Device Disabled :(");
-			#endif
-
-			break;
-		}
 
 		case kWarpSensorMMA8451Q:
 		{
@@ -2810,10 +2783,7 @@ repeatRegisterReadForDeviceAndAddress(WarpSensorDevice warpSensorDevice, uint8_t
 		}
 	}
 
-	if (warpSensorDevice != kWarpSensorADXL362)
-	{
 		warpDisableI2Cpins();
-	}
 }
 
 
