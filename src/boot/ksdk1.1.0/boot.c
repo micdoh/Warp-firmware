@@ -147,6 +147,11 @@ volatile uint32_t					gWarpMenuPrintDelayMilliseconds		= kWarpDefaultMenuPrintDe
 volatile uint32_t					gWarpSupplySettlingDelayMilliseconds	= kWarpDefaultSupplySettlingDelayMilliseconds;
 volatile uint16_t					gWarpCurrentSupplyVoltage		= kWarpDefaultSupplyVoltageMillivolts;
 char							gWarpPrintBuffer[kWarpDefaultPrintBufferSizeBytes];
+/*
+ * Arrays of X, Y, Z readings from sensors
+ */
+int                             i;
+uint16_t *                      readingsMMA8451Q;
 
 /*
  *	Since only one SPI transaction is ongoing at a time in our implementation
@@ -178,7 +183,6 @@ WarpStatus						writeBytesToSpi(uint8_t *  payloadBytes, int payloadLength);
 
 
 void							warpLowPowerSecondsSleep(uint32_t sleepSeconds, bool forceAllPinsIntoLowPowerState);
-
 
 
 /*
@@ -1554,7 +1558,6 @@ main(void)
 	#endif
 
 	#if (WARP_BUILD_ENABLE_DEVMMA8451Q)
-//		initMMA8451Q(	0x1D	/* i2cAddress */,	&deviceMMA8451QState,		kWarpDefaultSupplyVoltageMillivoltsMMA8451Q	);
 		initMMA8451Q(	0x1D	/* i2cAddress */,		kWarpDefaultSupplyVoltageMillivoltsMMA8451Q	);
 	#endif
 
@@ -1575,10 +1578,8 @@ main(void)
 	#endif
 
 	#if (WARP_BUILD_ENABLE_DEVL3GD20H)
-//		initL3GD20H(	0x6A	/* i2cAddress */,	&deviceL3GD20HState,		kWarpDefaultSupplyVoltageMillivoltsL3GD20H	);
         initL3GD20H(	0x6B	/* i2cAddress */,	kWarpDefaultSupplyVoltageMillivoltsL3GD20H	);
-
-#endif
+    #endif
 
 	#if (WARP_BUILD_ENABLE_DEVBME680)
 //		initBME680(	0x77	/* i2cAddress */,	&deviceBME680State,		kWarpDefaultSupplyVoltageMillivoltsBME680	);
@@ -2005,10 +2006,21 @@ main(void)
     printSensorDataINA219(false, 0x05);  // Calibration
 
     /* Print 1000 current (mA) readings */
-    for (int i = 0; i < 1000; i++)
-    {
-        printSensorDataINA219(true, 0x01);  // Read V_shunt and convert to current (R=0.1 Ohm)
+    //for (int i = 0; i < 1000; i++)
+    //{
+    //    printSensorDataINA219(true, 0x01);  // Read V_shunt and convert to current (R=0.1 Ohm)
+    //}
+    activeMMA8451Q();
+    warpPrint("MMA8451Q Activated\n");
+    //OSA_TimeDelay(1000);
+    for ( i = 0; i < 5; ++i) {
+        readingsMMA8451Q = returnSensorDataMMA8451Q();
+        warpPrint("X, %d, ", readingsMMA8451Q[0]);
+        warpPrint("Y, %d, ", readingsMMA8451Q[1]);
+        warpPrint("Z, %d\n", readingsMMA8451Q[2]);
+        //OSA_TimeDelay(50);
     }
+
 
 	while (1)
 	{

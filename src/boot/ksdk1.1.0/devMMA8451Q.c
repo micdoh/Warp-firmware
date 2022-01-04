@@ -62,6 +62,8 @@ extern volatile uint32_t		gWarpI2cBaudRateKbps;
 extern volatile uint32_t		gWarpI2cTimeoutMilliseconds;
 extern volatile uint32_t		gWarpSupplySettlingDelayMilliseconds;
 
+uint8_t         ACTIVE_MASK = 0b00000001;
+uint8_t         CTRL_REG1 = 0x2A;
 
 
 void
@@ -305,4 +307,65 @@ printSensorDataMMA8451Q(bool hexModeFlag)
 			warpPrint(" %d,", readSensorRegisterValueCombined);
 		}
 	}
+}
+
+
+
+int16_t *
+returnSensorDataMMA8451Q(void)
+{
+    uint16_t	    readSensorRegisterValueLSB;
+    uint16_t	    readSensorRegisterValueMSB;
+    static int16_t  readings[3];
+    int16_t		    readSensorRegisterValueCombined;
+    int             i;
+
+    warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
+
+    readSensorRegisterMMA8451Q(kWarpSensorOutputRegisterMMA8451QOUT_X_MSB, 6 /* numberOfBytes */);
+    for ( i = 0; i < 3; ++i) {
+        readSensorRegisterValueMSB = deviceMMA8451QState.i2cBuffer[i];
+        readSensorRegisterValueLSB = deviceMMA8451QState.i2cBuffer[i+1];
+        readSensorRegisterValueCombined = ((readSensorRegisterValueMSB & 0xFF) << 6) | (readSensorRegisterValueLSB >> 2);
+        //	Sign extend the 14-bit value based on knowledge that upper 2 bit are 0:
+        readings[i] = (readSensorRegisterValueCombined ^ (1 << 13)) - (1 << 13);
+
+    }
+
+    return readings;
+}
+
+void
+standbyMMA8451Q (void)
+{
+    /*
+    ** Read current value of System Control 1 Register.
+    ** Put sensor into Standby Mode by clearing the Active bit
+    ** Return with previous value of System Control 1 Register.
+    */
+    uint8_t        n;
+    //WarpStatus  i2cReadStatus, i2cWriteStatus;
+
+    readSensorRegisterMMA8451Q(CTRL_REG1, 1 /* numberOfBytes */);
+    n = deviceMMA8451QState.i2cBuffer[0];
+
+    writeSensorRegisterMMA8451Q(CTRL_REG1, n & ~ACTIVE_MASK);
+
+}
+
+void
+activeMMA8451Q (void)
+{
+    /*
+    ** Set the Active bit in CTRL Reg 1
+    */
+
+    //WarpStatus  i2cReadStatus, i2cWriteStatus;
+    uint8_t        regVal;
+
+    readSensorRegisterMMA8451Q(CTRL_REG1, 1 /* numberOfBytes */);
+    regVal = deviceMMA8451QState.i2cBuffer[0];
+
+    writeSensorRegisterMMA8451Q(CTRL_REG1, regVal | ACTIVE_MASK);
+
 }

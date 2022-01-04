@@ -110,14 +110,6 @@ typedef enum
 
 typedef enum
 {
-	kWarpSensorConfigConstADXL362registerWriteCommand		= 0x0A,
-	kWarpSensorConfigConstADXL362registerReadRegister		= 0x0B,
-	kWarpSensorConfigConstADXL362registerFIFORead			= 0x0D,
-	kWarpSensorConfigConstADXL362resetCode				= 0x52,
-} WarpSensorConfigConst;
-
-typedef enum
-{
 	kWarpMiscMarkerForAbsentByte					= 0xFF,
 } WarpMisc;
 
