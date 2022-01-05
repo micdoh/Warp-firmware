@@ -44,3 +44,14 @@ typedef enum
 
 int	devSSD1331init(void);
 int devSSD1331drawGlyph(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b, uint8_t glyph);
+int clearScreen(void);
+int draw0(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b);
+int draw1(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b);
+int draw2(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b);
+int draw3(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b);
+int draw4(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b);
+int draw5(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b);
+int draw6(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b);
+int draw7(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b);
+int draw8(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b);
+int draw9(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b);

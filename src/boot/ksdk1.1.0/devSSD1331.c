@@ -66,6 +66,7 @@ static int
 writeMultipleCommand(uint8_t * commandBytes, uint8_t transferSize)
 {
     spi_status_t status;
+    warpPrint("%d\n", transferSize);
 
     /*
      *	Drive /CS low.
@@ -81,16 +82,22 @@ writeMultipleCommand(uint8_t * commandBytes, uint8_t transferSize)
      */
     GPIO_DRV_ClearPinOutput(kSSD1331PinDC);
 
-    status = SPI_DRV_MasterTransferBlocking(0	/* master instance */,
-                                            NULL		/* spi_master_user_config_t */,
-            (const uint8_t * restrict)&commandBytes,
-            (uint8_t * restrict)&inBuffer[0],
-            transferSize		/* transfer size */,
-            10000		/* timeout in microseconds (unlike I2C which is ms) */);
+    int i;
+    warpPrint("Starting write\n");
+    for (i = 0; i < transferSize; ++i)
+    {
+        status = SPI_DRV_MasterTransferBlocking(0	/* master instance */,
+                NULL		/* spi_master_user_config_t */,
+                (const uint8_t * restrict)&commandBytes[i],
+                (uint8_t * restrict)&inBuffer[0],
+                1		/* transfer size */,
+                1000		/* timeout in microseconds (unlike I2C which is ms) */);
+        warpPrint("%d\n", i);
 
+    }
     /*
-     *	Drive /CS high
-     */
+ *	Drive /CS high
+ */
     GPIO_DRV_SetPinOutput(kSSD1331PinCSn);
 
     return status;
@@ -194,41 +201,304 @@ devSSD1331init(void)
 	return 0;
 }
 
+int
+clearScreen(void){
+    uint8_t commands[5] = {
+            kSSD1331CommandCLEAR, 0x00, 0x00, 0x5F, 0x3F};
+    writeMultipleCommand(commands, 5);
+    return 0;
+}
+
+int
+draw0(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+    uint8_t commands[66] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0, // Top
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // Bottom
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // All right
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol, startRow+scale+scale, 0, 0, 0, 0, 0, 0};
+    writeMultipleCommand(commands, 66);
+    return 0;
+}
+
+int
+draw1(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+    uint8_t commands[22] = {
+            kSSD1331CommandDRAWRECT, startCol+scale-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0};
+    writeMultipleCommand(commands, 22);
+    return 0;
+}
+
+int
+draw2(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+    uint8_t commands[88] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow+scale+2, startCol+scale+1, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,  // Top
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0, // Middle
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // Bottom
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0, // Top right
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol, startRow+scale+scale, 0, 0, 0, 0, 0, 0}; // Bottom left
+    writeMultipleCommand(commands, 88);
+    return 0;
+}
+
+int
+draw3(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+    uint8_t commands[77] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,  // Top
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0, // Middle
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // Bottom
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0,}; // All right
+    writeMultipleCommand(commands, 77);
+    return 0;
+}
+
+int
+draw4(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+    uint8_t commands[66] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow-1, startCol+scale-2, startRow+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale+1, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0, // Middle
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol, startRow+scale, 0, 0, 0, 0, 0, 0, // Top left
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0}; // All right
+    writeMultipleCommand(commands, 66);
+    return 0;
+}
+
+int
+draw5(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+    uint8_t commands[88] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow+2, startCol+scale+1, startRow+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,  // Top
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0, // Middle
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // Bottom
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol, startRow+scale, 0, 0, 0, 0, 0, 0, // Top left
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0}; // Bottom right
+    writeMultipleCommand(commands, 88);
+    return 0;
+}
+
+int
+draw6(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+    uint8_t commands[88] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow+2, startCol+scale+1, startRow+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,  // Top
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0, // Middle
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // Bottom
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // Bottom right
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol, startRow+scale+scale, 0, 0, 0, 0, 0, 0}; // All left
+    writeMultipleCommand(commands, 88);
+    return 0;
+}
+
+int
+draw7(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+    uint8_t commands[44] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow+2, startCol+scale-2, startRow+scale+scale+1, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0}; // All right
+    writeMultipleCommand(commands, 44);
+    return 0;
+}
+
+int
+draw8(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+    uint8_t commands[88] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // All right
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol, startRow+scale+scale, 0, 0, 0, 0, 0, 0}; // All left
+    writeMultipleCommand(commands, 88);
+    return 0;
+}
+
+int
+draw9(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+    uint8_t commands[88] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol, startRow+scale, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0};
+    writeMultipleCommand(commands, 88);
+    return 0;
+}
+
+/*
+int
+devSSD1331drawGlyph(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b, uint8_t glyph) {
+
+    //uint8_t * commands;
+    uint8_t commands0[66] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0, // Top
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // Bottom
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // All right
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol, startRow+scale+scale, 0, 0, 0, 0, 0, 0};
+    uint8_t commands1[22] = {
+            kSSD1331CommandDRAWRECT, startCol+scale-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0};
+    uint8_t commands2[88] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow+scale+2, startCol+scale+1, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,  // Top
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0, // Middle
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // Bottom
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0, // Top right
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol, startRow+scale+scale, 0, 0, 0, 0, 0, 0}; // Bottom left
+    uint8_t commands3[77] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,  // Top
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0, // Middle
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // Bottom
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0,}; // All right
+    uint8_t commands4[66] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow-1, startCol+scale-2, startRow+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale+1, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0, // Middle
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol, startRow+scale, 0, 0, 0, 0, 0, 0, // Top left
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0}; // All right
+    uint8_t commands5[88] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow+2, startCol+scale+1, startRow+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,  // Top
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0, // Middle
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // Bottom
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol, startRow+scale, 0, 0, 0, 0, 0, 0, // Top left
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0}; // Bottom right
+    uint8_t commands6[88] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow+2, startCol+scale+1, startRow+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,  // Top
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0, // Middle
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // Bottom
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // Bottom right
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol, startRow+scale+scale, 0, 0, 0, 0, 0, 0}; // All left
+    uint8_t commands7[44] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow+2, startCol+scale-2, startRow+scale+scale+1, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0}; // All right
+    uint8_t commands8[88] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // All right
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol, startRow+scale+scale, 0, 0, 0, 0, 0, 0}; // All left
+    uint8_t commands9[88] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol+2, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol, startRow, startCol, startRow+scale, 0, 0, 0, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0};
+    drawRect(0, 0, 95, 63, 255, 0 ,0);
+    switch(glyph)
+    {
+        case 0:
+            warpPrint("writing 0");
+            //commands = commands0(startCol, startRow, scale, r, g, b);
+            writeMultipleCommand(commands0, 66);
+            break;
+        case 1:
+            warpPrint("writing 1");
+            writeMultipleCommand(commands1, 22);
+            break;
+        case 2:
+            writeMultipleCommand(commands2, 88);
+            break;
+        case 3:
+            //writeMultipleCommand(commands3, 77);
+            break;
+        case 4:
+            //writeMultipleCommand(commands4, 66);
+            break;
+        case 5:
+            //writeMultipleCommand(commands5, 88);
+            break;
+        case 6:
+            //writeMultipleCommand(commands6, 88);
+            break;
+        case 7:
+            //writeMultipleCommand(commands7, 44);
+            break;
+        case 8:
+            //writeMultipleCommand(commands8, 88);
+            break;
+        case 9:
+            //writeMultipleCommand(commands9, 88);
+            break;
+    }
+    return 0;
+}
+
 
 int
 drawRect(uint8_t startCol, uint8_t startRow, uint8_t endCol, uint8_t endRow, uint8_t r, uint8_t g, uint8_t b) {
     /*
      *	Initialise the
-     */
-    uint8_t commands[11];
 
-    commands[0] = kSSD1331CommandDRAWRECT;
-    commands[1] = startCol;
-    commands[2] = startRow;
-    commands[3] = endCol;
-    commands[4] = endRow;
-    commands[5] = r;
-    commands[6] = g;
-    commands[7] = b;
-    commands[8] = r;
-    commands[9] = g;
-    commands[10] = b;
+uint8_t commands[11]; /*= {kSSD1331CommandDRAWRECT, startCol, startRow, endCol, endRow, r, g, b, r, g, b};
+*//*
+commands[0] = kSSD1331CommandDRAWRECT;
+commands[1] = startCol;
+commands[2] = startRow;
+commands[3] = endCol;
+commands[4] = endRow;
+commands[5] = r;
+commands[6] = g;
+commands[7] = b;
+commands[8] = r;
+commands[9] = g;
+commands[10] = b;
+warpPrint("drawing rect\n");
+//writeMultipleCommand(commands, 11);
 
-    writeMultipleCommand(commands, 11);
-    /*
-    writeCommand(kSSD1331CommandDRAWRECT);  // Initiate "draw rectangle" mode
-    writeCommand(startCol);              // Start column
-    writeCommand(startRow);              // Start row
-    writeCommand(endCol);                // End column
-    writeCommand(endRow);                // End row
-    writeCommand(r);                     // Outline blue contrast
-    writeCommand(g);                     // Outline green contrast (max)
-    writeCommand(b);                     // Outline red contrast
-    writeCommand(r);                     // Fill blue contrast
-    writeCommand(g);                     // Fill green contrast
-    writeCommand(b);                     // Fill red contrast
-    */
-    return 0;
+writeCommand(kSSD1331CommandDRAWRECT);  // Initiate "draw rectangle" mode
+writeCommand(startCol);              // Start column
+writeCommand(startRow);              // Start row
+writeCommand(endCol);                // End column
+writeCommand(endRow);                // End row
+writeCommand(r);                     // Outline blue contrast
+writeCommand(g);                     // Outline green contrast (max)
+writeCommand(b);                     // Outline red contrast
+writeCommand(r);                     // Fill blue contrast
+writeCommand(g);                     // Fill green contrast
+writeCommand(b);                     // Fill red contrast
+
+return 0;
 }
 
 int
@@ -236,7 +506,8 @@ drawLine(uint8_t startCol, uint8_t startRow, uint8_t endCol, uint8_t endRow, uin
     /*
      *	Initialise the
      */
-    writeCommand(kSSD1331CommandDRAWLINE);  // Initiate "draw rectangle" mode
+/*
+    writeCommand(kSSD1331CommandDRAWLINE);  // Initiate "draw line" mode
     writeCommand(startCol);              // Start column
     writeCommand(startRow);              // Start row
     writeCommand(endCol);                // End column
@@ -248,67 +519,8 @@ drawLine(uint8_t startCol, uint8_t startRow, uint8_t endCol, uint8_t endRow, uin
     return 0;
 }
 
-/*int
-drawSection(uint8_t centreCol, uint8_t centreRow, uint8_t fontSize, bool horiz) {
-    if (horiz) {
-        drawLine(centreCol-fontSize, centreRow)
-    }
-}*/
 
-int
-devSSD1331drawGlyph(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b, uint8_t glyph) {
 
-    switch(glyph)
-    {
-        case 0:
-            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
-            drawRect(startCol+2, startRow+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0);
-            break;
-        case 1:
-            drawRect(startCol+scale-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
-            break;
-        case 2:
-            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
-            drawRect(startCol-1, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0);
-            drawRect(startCol+2, startRow+scale+2, startCol+scale+1, startRow+scale+scale-2, 0, 0, 0);
-            break;
-        case 3:
-            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
-            drawRect(startCol-1, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0);
-            drawRect(startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0);
-            break;
-        case 4:
-            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
-            drawRect(startCol+2, startRow-1, startCol+scale-2, startRow+scale-2, 0, 0, 0);
-            drawRect(startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale+1, 0, 0, 0);
-            break;
-        case 5:
-            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
-            drawRect(startCol+2, startRow+2, startCol+scale+1, startRow+scale-2, 0, 0, 0);
-            drawRect(startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0);
-            break;
-        case 6:
-            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
-            drawRect(startCol+2, startRow+2, startCol+scale+1, startRow+scale-2, 0, 0, 0);
-            drawRect(startCol+2, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0);
-            break;
-        case 7:
-            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
-            drawRect(startCol-1, startRow+2, startCol+scale-2, startRow+scale+scale+1, 0, 0, 0);
-            break;
-        case 8:
-            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
-            drawRect(startCol+2, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0);
-            drawRect(startCol+2, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0);
-            break;
-        case 9:
-            drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
-            drawRect(startCol+2, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0);
-            drawRect(startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0);
-            break;
-    }
-    return 0;
-}
 /*
 case 8:
 drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+1, r, g, b); // ^-
@@ -319,13 +531,17 @@ drawRect(startCol+scale-1, startRow-1, startCol+scale+1, startRow+scale+1, r, g,
 drawRect(startCol-1, startRow+scale-1, startCol+1, startRow+scale+scale+1, r, g, b); // <|
 drawRect(startCol+scale-1, startRow+scale-1, startCol+scale+1, startRow+scale+scale+1, r, g, b); //>|
 
-drawRect(startCol, startRow, startCol+scale, startRow, 0, 0, 0);
-drawRect(startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0);
-drawRect(startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0);
-drawRect(startCol, startRow, startCol, startRow+scale, 0, 0, 0);
-drawRect(startCol+scale, startRow, startCol+scale, startRow+scale, 0, 0, 0);
-drawRect(startCol, startRow+scale, startCol, startRow+scale+scale, 0, 0, 0);
-drawRect(startCol+scale, startRow+scale, startCol+scale, startRow+scale+scale, 0, 0, 0);
+drawRect(startCol, startRow, startCol+scale, startRow, 0, 0, 0);  // Top
+drawRect(startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0); // Middle
+drawRect(startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0); // Bottom
+drawRect(startCol, startRow, startCol, startRow+scale, 0, 0, 0); // Top left
+drawRect(startCol+scale, startRow, startCol+scale, startRow+scale, 0, 0, 0); // Top right
+drawRect(startCol, startRow+scale, startCol, startRow+scale+scale, 0, 0, 0); // Bottom left
+drawRect(startCol+scale, startRow+scale, startCol+scale, startRow+scale+scale, 0, 0, 0); // Bottom right
+drawRect(startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0); // All right
+drawRect(startCol, startRow, startCol, startRow+scale+scale, 0, 0, 0); // All left
+
 break;
+
 */
 

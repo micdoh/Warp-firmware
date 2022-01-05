@@ -1970,16 +1970,17 @@ main(void)
 	#endif
 
 	devSSD1331init(); /* Initialize SSD1331 OLED Display */
-    devSSD1331drawGlyph(2, 2, 6, 255, 255, 255, 0);
-    devSSD1331drawGlyph(7, 2, 6, 255, 255, 255, 1);
-    devSSD1331drawGlyph(17, 2, 6, 255, 255, 255, 2);
-    devSSD1331drawGlyph(27, 2, 6, 255, 255, 255, 3);
-    devSSD1331drawGlyph(37, 2, 6, 255, 255, 255, 4);
-    devSSD1331drawGlyph(47, 2, 6, 255, 255, 255, 5);
-    devSSD1331drawGlyph(57, 2, 6, 255, 255, 255, 6);
-    devSSD1331drawGlyph(67, 2, 6, 255, 255, 255, 7);
-    devSSD1331drawGlyph(77, 2, 6, 255, 255, 255, 8);
-    devSSD1331drawGlyph(87, 2, 6, 255, 255, 255, 9);
+    warpPrint("SSD1331 Initialized\n");
+    draw0(2, 20, 10, 255, 255, 255);
+    draw1(7, 20, 10, 255, 255, 255);
+    draw2(17, 20, 10, 255, 255, 255);
+    draw3(27, 20, 10, 255, 255, 255);
+    draw4(37, 20, 10, 255, 255, 255);
+    draw5(47, 20, 10, 255, 255, 255);
+    draw6(57, 20, 10, 255, 255, 255);
+    draw7(67, 20, 10, 255, 255, 255);
+    draw8(77, 20, 10, 255, 255, 255);
+    draw9(87, 20, 10, 255, 255, 255);
 
 	initINA219(0x40 /* i2cAddress */, 3300 /* Operating voltage (mV) */);
 
@@ -1999,13 +2000,14 @@ main(void)
     }
 
     /* Checking register values */
+    /*
 	printSensorDataINA219(false, 0x00);  // Configuration
     printSensorDataINA219(false, 0x01);  // Shunt voltage
     printSensorDataINA219(false, 0x02);  // Bus Voltage
     printSensorDataINA219(false, 0x03);  // Power
     printSensorDataINA219(false, 0x04);  // Current
     printSensorDataINA219(false, 0x05);  // Calibration
-
+*/
     /* Print 1000 current (mA) readings */
     //for (int i = 0; i < 1000; i++)
     //{
@@ -2023,7 +2025,28 @@ main(void)
         OSA_TimeDelay(1000);
     }
      */
+    configureSensorMMA8451Q(0x00,/* Payload: Disable FIFO */
+                            0x05/* Normal read 8bit, 800Hz, low noise ( limited to +/-4g), active mode */
+    );
+    configureSensorL3GD20H(	0b11101111,/* ODR 800Hz, No cut-off, see table 21, normal mode, x,y,z enable */
+                               0b00100000,
+                               0b00000000/* normal mode, disable FIFO, disable high pass filter */
+    );
+    while (1)
+    {
+        uint32_t currTime, timeStart;
 
+        timeStart = OSA_TimeGetMsec();
+
+        uint16_t readingsMMA8451Q[3], readingsL3GD20H[3];
+
+        do {
+            currTime = OSA_TimeGetMsec(); /* Get current time stamp */
+            readingsMMA8451Q = returnSensorDataMMA8451Q();
+            readingsL3GD20H = returnSensorDataL3GD20H();
+
+        } while (1000 >= time_diff(timeStart, currTime));
+    }
 
 	while (1)
 	{
@@ -2561,6 +2584,8 @@ printAllSensors(bool printHeadersAndCalibration, bool hexModeFlag, int menuDelay
 		warpPrint(" RTC->TSR, RTC->TPR, # Config Errors");
 		warpPrint("\n\n");
 	}
+
+    clearScreen()
 
 	do
 	{
