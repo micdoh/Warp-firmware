@@ -12,6 +12,7 @@
 
 volatile uint8_t	inBuffer[1];
 volatile uint8_t	payloadBytes[1];
+volatile uint8_t	commandBytes[11];
 
 
 /*
@@ -37,7 +38,7 @@ writeCommand(uint8_t commandByte)
 	 *	Make sure there is a high-to-low transition by first driving high, delay, then drive low.
 	 */
 	GPIO_DRV_SetPinOutput(kSSD1331PinCSn);
-	OSA_TimeDelay(10);
+	OSA_TimeDelay(2);  //Reduce delay to speed writes
 	GPIO_DRV_ClearPinOutput(kSSD1331PinCSn);
 
 	/*
@@ -59,6 +60,40 @@ writeCommand(uint8_t commandByte)
 	GPIO_DRV_SetPinOutput(kSSD1331PinCSn);
 
 	return status;
+}
+
+static int
+writeMultipleCommand(uint8_t * commandBytes, uint8_t transferSize)
+{
+    spi_status_t status;
+
+    /*
+     *	Drive /CS low.
+     *
+     *	Make sure there is a high-to-low transition by first driving high, delay, then drive low.
+     */
+    GPIO_DRV_SetPinOutput(kSSD1331PinCSn);
+    OSA_TimeDelay(2);  //Reduce delay to speed writes
+    GPIO_DRV_ClearPinOutput(kSSD1331PinCSn);
+
+    /*
+     *	Drive DC low (command).
+     */
+    GPIO_DRV_ClearPinOutput(kSSD1331PinDC);
+
+    status = SPI_DRV_MasterTransferBlocking(0	/* master instance */,
+                                            NULL		/* spi_master_user_config_t */,
+            (const uint8_t * restrict)&commandBytes,
+            (uint8_t * restrict)&inBuffer[0],
+            transferSize		/* transfer size */,
+            10000		/* timeout in microseconds (unlike I2C which is ms) */);
+
+    /*
+     *	Drive /CS high
+     */
+    GPIO_DRV_SetPinOutput(kSSD1331PinCSn);
+
+    return status;
 }
 
 
@@ -165,6 +200,22 @@ drawRect(uint8_t startCol, uint8_t startRow, uint8_t endCol, uint8_t endRow, uin
     /*
      *	Initialise the
      */
+    uint8_t commands[11];
+
+    commands[0] = kSSD1331CommandDRAWRECT;
+    commands[1] = startCol;
+    commands[2] = startRow;
+    commands[3] = endCol;
+    commands[4] = endRow;
+    commands[5] = r;
+    commands[6] = g;
+    commands[7] = b;
+    commands[8] = r;
+    commands[9] = g;
+    commands[10] = b;
+
+    writeMultipleCommand(commands, 11);
+    /*
     writeCommand(kSSD1331CommandDRAWRECT);  // Initiate "draw rectangle" mode
     writeCommand(startCol);              // Start column
     writeCommand(startRow);              // Start row
@@ -176,7 +227,7 @@ drawRect(uint8_t startCol, uint8_t startRow, uint8_t endCol, uint8_t endRow, uin
     writeCommand(r);                     // Fill blue contrast
     writeCommand(g);                     // Fill green contrast
     writeCommand(b);                     // Fill red contrast
-
+    */
     return 0;
 }
 
@@ -211,7 +262,7 @@ devSSD1331drawGlyph(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r
     {
         case 0:
             drawRect(startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
-            drawRect(startCol+2, startRow+2, startCol+scale-2, startRow+scale+scale-2, r, g, b);
+            drawRect(startCol+2, startRow+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0);
             break;
         case 1:
             drawRect(startCol+scale-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b);
