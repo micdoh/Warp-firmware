@@ -201,6 +201,7 @@ readSensorRegisterMMA8451Q(uint8_t deviceRegister, int numberOfBytes)
 
 	if (status != kStatus_I2C_Success)
 	{
+        warpPrint("MMA8451Q read failed");
 		return kWarpStatusDeviceCommunicationFailed;
 	}
 
@@ -320,7 +321,7 @@ returnSensorDataMMA8451Q(void)
     int16_t		    readSensorRegisterValueCombined;
     int             i;
 
-    warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
+    //warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
 
     readSensorRegisterMMA8451Q(kWarpSensorOutputRegisterMMA8451QOUT_X_MSB, 6 /* numberOfBytes */);
     for ( i = 0; i < 3; ++i) {

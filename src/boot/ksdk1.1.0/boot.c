@@ -2010,16 +2010,18 @@ main(void)
     //{
     //    printSensorDataINA219(true, 0x01);  // Read V_shunt and convert to current (R=0.1 Ohm)
     //}
+    /*
     activeMMA8451Q();
     warpPrint("MMA8451Q Activated\n");
-    //OSA_TimeDelay(1000);
     for ( i = 0; i < 5; ++i) {
         readingsMMA8451Q = returnSensorDataMMA8451Q();
+        OSA_TimeDelay(1000);
         warpPrint("X, %d, ", readingsMMA8451Q[0]);
         warpPrint("Y, %d, ", readingsMMA8451Q[1]);
         warpPrint("Z, %d\n", readingsMMA8451Q[2]);
-        //OSA_TimeDelay(50);
+        OSA_TimeDelay(1000);
     }
+     */
 
 
 	while (1)
@@ -2532,12 +2534,12 @@ printAllSensors(bool printHeadersAndCalibration, bool hexModeFlag, int menuDelay
 
 	#if (WARP_BUILD_ENABLE_DEVMMA8451Q)
 	numberOfConfigErrors += configureSensorMMA8451Q(0x00,/* Payload: Disable FIFO */
-					0x01/* Normal read 8bit, 800Hz, normal, active mode */
+					0x05/* Normal read 8bit, 800Hz, low noise ( limited to +/-4g), active mode */
 					);
 	#endif
 
 	#if (WARP_BUILD_ENABLE_DEVL3GD20H)
-	numberOfConfigErrors += configureSensorL3GD20H(	0b11111111,/* ODR 800Hz, Cut-off 100Hz, see table 21, normal mode, x,y,z enable */
+	numberOfConfigErrors += configureSensorL3GD20H(	0b11101111,/* ODR 800Hz, No cut-off, see table 21, normal mode, x,y,z enable */
 					0b00100000,
 					0b00000000/* normal mode, disable FIFO, disable high pass filter */
 					);

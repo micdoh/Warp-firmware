@@ -1,3 +1,6 @@
+PROJECT(Bicycle-computer)
+
+#INCLUDE(CMakeForceCompiler)
 INCLUDE(CMakeForceCompiler)
 
 # CROSS COMPILER SETTING
