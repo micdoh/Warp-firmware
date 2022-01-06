@@ -41,9 +41,6 @@
 #include <string.h>
 #include <stdarg.h>
 
-/*
- *	config.h needs to come first
- */
 #include "config.h"
 
 #include "fsl_misc_utilities.h"
@@ -56,84 +53,27 @@
 #include "fsl_mcglite_hal.h"
 #include "fsl_port_hal.h"
 #include "fsl_lpuart_driver.h"
-//#include "glaux.h"
 #include "warp.h"
 #include "errstrs.h"
 #include "gpio_pins.h"
 #include "SEGGER_RTT.h"
 #include "devSSD1331.h"
-
 #include "devINA219.h"
+#include "devMMA8451Q.h"
+#include "devL3GD20H.h"
+volatile WarpI2CDeviceState		deviceL3GD20HState;
 volatile WarpI2CDeviceState		deviceINA219State;
+volatile WarpI2CDeviceState		deviceMMA8451QState;
 
 #define							kWarpConstantStringI2cFailure		"\rI2C failed, reg 0x%02x, code %d\n"
 #define							kWarpConstantStringErrorInvalidVoltage	"\rInvalid supply voltage [%d] mV!"
 #define							kWarpConstantStringErrorSanity		"\rSanity check failed!"
-#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
-
-
-#if (WARP_BUILD_ENABLE_DEVMMA8451Q)
-	#include "devMMA8451Q.h"
-	volatile WarpI2CDeviceState			deviceMMA8451QState;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVL3GD20H)
-	#include "devL3GD20H.h"
-	volatile WarpI2CDeviceState			deviceL3GD20HState;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEV)
-	#include "devBME680.h"
-	volatile WarpI2CDeviceState			deviceBME680State;
-	volatile uint8_t				deviceBME680CalibrationValues[kWarpSizesBME680CalibrationValuesCount];
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVTCS34725)
-	#include "devTCS34725.h"
-	volatile WarpI2CDeviceState			deviceTCS34725State;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVSI4705)
-	#include "devSI4705.h"
-	volatile WarpI2CDeviceState			deviceSI4705State;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVCCS811)
-	#include "devCCS811.h"
-	olatile WarpI2CDeviceState			deviceCCS811State;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVAMG8834)
-	#include "devAMG8834.h"
-	volatile WarpI2CDeviceState			deviceAMG8834State;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVAS7262)
-	#include "devAS7262.h"
-	volatile WarpI2CDeviceState			deviceAS7262State;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVAS7263)
-	#include "devAS7263.h"
-	volatile WarpI2CDeviceState			deviceAS7263State;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVRV8803C7)
-	#include "devRV8803C7.h"
-	volatile WarpI2CDeviceState			deviceRV8803C7State;
-#endif
-
-#if (WARP_BUILD_ENABLE_DEVBGX)
-	#include "devBGX.h"
-	volatile WarpUARTDeviceState			deviceBGXState;
-#endif
 
 volatile i2c_master_state_t			i2cMasterState;
 volatile spi_master_state_t			spiMasterState;
 volatile spi_master_user_config_t	spiUserConfig;
 volatile lpuart_user_config_t		lpuartUserConfig;
 volatile lpuart_state_t				lpuartState;
-
 
 volatile bool						gWarpBooted				                = false;
 volatile uint32_t					gWarpI2cBaudRateKbps			        = kWarpDefaultI2cBaudRateKbps;
@@ -148,17 +88,8 @@ volatile uint32_t					gWarpMenuPrintDelayMilliseconds		    = kWarpDefaultMenuPri
 volatile uint32_t					gWarpSupplySettlingDelayMilliseconds	= kWarpDefaultSupplySettlingDelayMilliseconds;
 volatile uint16_t					gWarpCurrentSupplyVoltage		        = kWarpDefaultSupplyVoltageMillivolts;
 char							    gWarpPrintBuffer[kWarpDefaultPrintBufferSizeBytes];
-/*
- * Arrays of X, Y, Z readings from sensors
- */
-int                             i;
-uint16_t *                      readingsMMA8451Q;
-
-/*
- *	Since only one SPI transaction is ongoing at a time in our implementation
- */
-uint8_t							gWarpSpiCommonSourceBuffer[kWarpMemoryCommonSpiBufferBytes];
-uint8_t							gWarpSpiCommonSinkBuffer[kWarpMemoryCommonSpiBufferBytes];
+uint8_t							    gWarpSpiCommonSourceBuffer[kWarpMemoryCommonSpiBufferBytes];
+uint8_t							    gWarpSpiCommonSinkBuffer[kWarpMemoryCommonSpiBufferBytes];
 
 static void						sleepUntilReset(void);
 static void						lowPowerPinStates(void);
@@ -168,14 +99,8 @@ static void						setTPS62740CommonControlLines(uint16_t voltageMillivolts);
 static void						dumpProcessorState(void);
 uint16_t                        avg(uint16_t *, uint8_t length);
 uint16_t                        iterativeAvg(uint16_t prev_avg, uint16_t cur_elem, uint8_t n);
-
-/*
- *	TODO: change the following to take byte arrays
- */
 WarpStatus						writeByteToI2cDeviceRegister(uint8_t i2cAddress, bool sendCommandByte, uint8_t commandByte, bool sendPayloadByte, uint8_t payloadByte);
 WarpStatus						writeBytesToSpi(uint8_t *  payloadBytes, int payloadLength);
-
-
 void							warpLowPowerSecondsSleep(uint32_t sleepSeconds, bool forceAllPinsIntoLowPowerState);
 
 
@@ -585,190 +510,83 @@ warpDisableI2Cpins(void)
 }
 
 
-#if (WARP_BUILD_ENABLE_GLAUX_VARIANT)
-	void
-	lowPowerPinStates(void)
-	{
-		/*
-		 *	Following Section 5 of "Power Management for Kinetis L Family" (AN5088.pdf),
-		 *	we configure all pins as output and set them to a known state, except for the
-		 *	sacrificial pins (WLCSP package, Glaux) where we set them to disabled. We choose
-		 *	to set non-disabled pins to '0'.
-		 *
-		 *	NOTE: Pin state "disabled" means default functionality is active.
-		 */
 
-		/*
-		 *			PORT A
-		 */
-		/*
-		 *	Leave PTA0/1/2 SWD pins in their default state (i.e., as SWD / Alt3).
-		 *
-		 *	See GitHub issue https://github.com/physical-computation/Warp-firmware/issues/54
-		 */
-		PORT_HAL_SetMuxMode(PORTA_BASE, 0, kPortMuxAlt3);
-		PORT_HAL_SetMuxMode(PORTA_BASE, 1, kPortMuxAlt3);
-		PORT_HAL_SetMuxMode(PORTA_BASE, 2, kPortMuxAlt3);
+void
+lowPowerPinStates(void)
+{
+    /*
+     *	Following Section 5 of "Power Management for Kinetis L Family" (AN5088.pdf),
+     *	we configure all pins as output and set them to a known state. We choose
+     *	to set them all to '0' since it happens that the devices we want to keep
+     *	deactivated (SI4705) also need '0'.
+     */
 
-		/*
-		 *	PTA3 and PTA4 are the EXTAL0/XTAL0. They are also connected to the clock output
-		 *	of the RV8803 (and PTA4 is a sacrificial pin for PTA3), so do not want to drive them.
-		 *	We however have to configure PTA3 to Alt0 (kPortPinDisabled) to get the EXTAL0
-		 *	functionality.
-		 *
-		 *	NOTE:	kPortPinDisabled is the equivalent of `Alt0`
-		 */
-		PORT_HAL_SetMuxMode(PORTA_BASE, 3, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTA_BASE, 4, kPortPinDisabled);
+    /*
+     *			PORT A
+     */
+    /*
+     *	For now, don't touch the PTA0/1/2 SWD pins. Revisit in the future.
+     */
+    PORT_HAL_SetMuxMode(PORTA_BASE, 0, kPortMuxAlt3);
+    PORT_HAL_SetMuxMode(PORTA_BASE, 1, kPortMuxAlt3);
+    PORT_HAL_SetMuxMode(PORTA_BASE, 2, kPortMuxAlt3);
 
-		/*
-		 *	Disable PTA5
-		 *
-		 *	NOTE: Enabling this significantly increases current draw
-		 *	(from ~180uA to ~4mA) and we don't need the RTC on Glaux.
-		 *
-		 */
-		PORT_HAL_SetMuxMode(PORTA_BASE, 5, kPortPinDisabled);
+    /*
+     *	PTA3 and PTA4 are the EXTAL0/XTAL0. They are also connected to the clock output
+     *	of the RV8803 (and PTA4 is a sacrificial pin for PTA3), so do not want to drive them.
+     *	We however have to configure PTA3 to Alt0 (kPortPinDisabled) to get the EXTAL0
+     *	functionality.
+     *
+     *	NOTE:	kPortPinDisabled is the equivalent of `Alt0`
+     */
+    PORT_HAL_SetMuxMode(PORTA_BASE, 3, kPortPinDisabled);
+    PORT_HAL_SetMuxMode(PORTA_BASE, 4, kPortPinDisabled);
 
-		/*
-		 *	PTA6, PTA7, PTA8, and PTA9 on Glaux are SPI and sacrificial SPI.
-		 *
-		 *	Section 2.6 of Kinetis Energy Savings – Tips and Tricks says
-		 *
-		 *		"Unused pins should be configured in the disabled state, mux(0),
-		 *		to prevent unwanted leakage (potentially caused by floating inputs)."
-		 *
-		 *	However, other documents advice to place pin as GPIO and drive low or high.
-		 *	For now, leave disabled. Filed issue #54 low-power pin states to investigate.
-		 */
-		PORT_HAL_SetMuxMode(PORTA_BASE, 6, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTA_BASE, 7, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTA_BASE, 8, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTA_BASE, 9, kPortPinDisabled);
+    /*
+     *	Disable PTA5
+     *
+     *	NOTE: Enabling this significantly increases current draw
+     *	(from ~180uA to ~4mA) and we don't need the RTC on revC.
+     *
+     */
+    PORT_HAL_SetMuxMode(PORTA_BASE, 5, kPortPinDisabled);
 
-		/*
-		 *	NOTE: The KL03 has no PTA10 or PTA11
-		 */
+    /*
+     *	Section 2.6 of Kinetis Energy Savings – Tips and Tricks says
+     *
+     *		"Unused pins should be configured in the disabled state, mux(0),
+     *		to prevent unwanted leakage (potentially caused by floating inputs)."
+     *
+     *	However, other documents advice to place pin as GPIO and drive low or high.
+     *	For now, leave disabled. Filed issue #54 low-power pin states to investigate.
+     */
+    PORT_HAL_SetMuxMode(PORTA_BASE, 6, kPortPinDisabled);
+    PORT_HAL_SetMuxMode(PORTA_BASE, 7, kPortPinDisabled);
+    PORT_HAL_SetMuxMode(PORTA_BASE, 8, kPortPinDisabled);
+    PORT_HAL_SetMuxMode(PORTA_BASE, 9, kPortPinDisabled);
 
-		/*
-		 *	In Glaux, PTA12 is a sacrificial pin for SWD_RESET, so careful not to drive it.
-		 */
-		PORT_HAL_SetMuxMode(PORTA_BASE, 12, kPortPinDisabled);
+    /*
+     *	NOTE: The KL03 has no PTA10 or PTA11
+     */
+    PORT_HAL_SetMuxMode(PORTA_BASE, 12, kPortPinDisabled);
 
 
+    /*
+     *			PORT B
+     */
+    PORT_HAL_SetMuxMode(PORTB_BASE, 0, kPortPinDisabled);
+    PORT_HAL_SetMuxMode(PORTB_BASE, 1, kPortPinDisabled);
+    PORT_HAL_SetMuxMode(PORTB_BASE, 2, kPortPinDisabled);
+    PORT_HAL_SetMuxMode(PORTB_BASE, 3, kPortPinDisabled);
+    PORT_HAL_SetMuxMode(PORTB_BASE, 4, kPortPinDisabled);
+    PORT_HAL_SetMuxMode(PORTB_BASE, 5, kPortPinDisabled);
+    PORT_HAL_SetMuxMode(PORTB_BASE, 6, kPortPinDisabled);
+    PORT_HAL_SetMuxMode(PORTB_BASE, 7, kPortPinDisabled);
+    PORT_HAL_SetMuxMode(PORTB_BASE, 10, kPortPinDisabled);
+    PORT_HAL_SetMuxMode(PORTB_BASE, 11, kPortPinDisabled);
+    PORT_HAL_SetMuxMode(PORTB_BASE, 13, kPortPinDisabled);
+}
 
-		/*
-		 *			PORT B
-		 *
-		 *	PTB0 is LED on Glaux. PTB1 is unused, and PTB2 is FLASH_!CS
-		 */
-		PORT_HAL_SetMuxMode(PORTB_BASE, 0, kPortMuxAsGpio);
-		PORT_HAL_SetMuxMode(PORTB_BASE, 1, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTB_BASE, 2, kPortMuxAsGpio);
-
-		/*
-		 *	PTB3 and PTB4 (I2C pins) are true open-drain and we
-		 *	purposefully leave them disabled since they have pull-ups.
-		 *	PTB5 is sacrificial for I2C_SDA, so disable.
-		 */
-		PORT_HAL_SetMuxMode(PORTB_BASE, 3, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTB_BASE, 4, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTB_BASE, 5, kPortPinDisabled);
-
-		/*
-		 *	NOTE:
-		 *
-		 *	The KL03 has no PTB8, PTB9, or PTB12.  Additionally, the WLCSP package
-		 *	we in Glaux has no PTB6, PTB7, PTB10, or PTB11.
-		 */
-
-		/*
-		 *	In Glaux, PTB13 is a sacrificial pin for SWD_RESET, so careful not to drive it.
-		 */
-		PORT_HAL_SetMuxMode(PORTB_BASE, 13, kPortPinDisabled);
-
-		GPIO_DRV_SetPinOutput(kGlauxPinFlash_SPI_nCS);
-		GPIO_DRV_ClearPinOutput(kGlauxPinLED);
-
-		return;
-	}
-#else
-	void
-	lowPowerPinStates(void)
-	{
-		/*
-		 *	Following Section 5 of "Power Management for Kinetis L Family" (AN5088.pdf),
-		 *	we configure all pins as output and set them to a known state. We choose
-		 *	to set them all to '0' since it happens that the devices we want to keep
-		 *	deactivated (SI4705) also need '0'.
-		 */
-
-		/*
-		 *			PORT A
-		 */
-		/*
-		 *	For now, don't touch the PTA0/1/2 SWD pins. Revisit in the future.
-		 */
-		PORT_HAL_SetMuxMode(PORTA_BASE, 0, kPortMuxAlt3);
-		PORT_HAL_SetMuxMode(PORTA_BASE, 1, kPortMuxAlt3);
-		PORT_HAL_SetMuxMode(PORTA_BASE, 2, kPortMuxAlt3);
-
-		/*
-		 *	PTA3 and PTA4 are the EXTAL0/XTAL0. They are also connected to the clock output
-		 *	of the RV8803 (and PTA4 is a sacrificial pin for PTA3), so do not want to drive them.
-		 *	We however have to configure PTA3 to Alt0 (kPortPinDisabled) to get the EXTAL0
-		 *	functionality.
-		 *
-		 *	NOTE:	kPortPinDisabled is the equivalent of `Alt0`
-		 */
-		PORT_HAL_SetMuxMode(PORTA_BASE, 3, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTA_BASE, 4, kPortPinDisabled);
-
-		/*
-		 *	Disable PTA5
-		 *
-		 *	NOTE: Enabling this significantly increases current draw
-		 *	(from ~180uA to ~4mA) and we don't need the RTC on revC.
-		 *
-		 */
-		PORT_HAL_SetMuxMode(PORTA_BASE, 5, kPortPinDisabled);
-
-		/*
-		 *	Section 2.6 of Kinetis Energy Savings – Tips and Tricks says
-		 *
-		 *		"Unused pins should be configured in the disabled state, mux(0),
-		 *		to prevent unwanted leakage (potentially caused by floating inputs)."
-		 *
-		 *	However, other documents advice to place pin as GPIO and drive low or high.
-		 *	For now, leave disabled. Filed issue #54 low-power pin states to investigate.
-		 */
-		PORT_HAL_SetMuxMode(PORTA_BASE, 6, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTA_BASE, 7, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTA_BASE, 8, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTA_BASE, 9, kPortPinDisabled);
-
-		/*
-		 *	NOTE: The KL03 has no PTA10 or PTA11
-		 */
-		PORT_HAL_SetMuxMode(PORTA_BASE, 12, kPortPinDisabled);
-
-
-		/*
-		 *			PORT B
-		 */
-		PORT_HAL_SetMuxMode(PORTB_BASE, 0, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTB_BASE, 1, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTB_BASE, 2, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTB_BASE, 3, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTB_BASE, 4, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTB_BASE, 5, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTB_BASE, 6, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTB_BASE, 7, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTB_BASE, 10, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTB_BASE, 11, kPortPinDisabled);
-		PORT_HAL_SetMuxMode(PORTB_BASE, 13, kPortPinDisabled);
-	}
-#endif
 
 
 void
@@ -1051,21 +869,6 @@ warpLowPowerSecondsSleep(uint32_t sleepSeconds, bool forceAllPinsIntoLowPowerSta
 	{
 		warpPrint("warpSetLowPowerMode(kWarpPowerModeVLPS, 0 /* sleep seconds : irrelevant here */)() failed...\n");
 	}
-}
-
-uint16_t
-avg(uint16_t * array, uint8_t length) {
-    int i;
-    uint16_t avg;
-    uint32_t sum = 0;
-
-    for (i = 0; i < length; ++i) {
-        sum += array[i];
-    }
-
-    avg = sum / length;
-    printf("Average = %d", avg);
-    return avg;
 }
 
 uint16_t
@@ -1581,7 +1384,7 @@ main(void) {
                            0b00000000/* normal mode, disable FIFO, disable high pass filter */
     );
 
-    //clearScreen();
+    clearScreen();
     uint16_t readingsMMA8451Q[3];
     uint16_t readingsL3GD20H[3];
 
@@ -1596,19 +1399,25 @@ main(void) {
         warpPrint("Status register value: %d\n\n", statusRegisterValue);
         if ((statusRegisterValue & 0b00001000) == 8) {
             returnSensorDataL3GD20H(readingsL3GD20H);
-            if (j == 1){
-                xAVG = readingsL3GD20H[i];
-                yAVG = readingsL3GD20H[i + 1];
-                zAVG = readingsL3GD20H[i + 2];
+            if (j == 0){
+                xAVG = readingsL3GD20H[j];
+                yAVG = readingsL3GD20H[j+1];
+                zAVG = readingsL3GD20H[j+2];
             }
             else {
-                xAVG = iterativeAvg(xAVG, readingsL3GD20H[i], j+1);
-                yAVG = iterativeAvg(xAVG, readingsL3GD20H[i+1], j+1);
-                zAVG = iterativeAvg(xAVG, readingsL3GD20H[i+2], j+1);
+                xAVG = iterativeAvg(xAVG, readingsL3GD20H[0], j+1);
+                yAVG = iterativeAvg(xAVG, readingsL3GD20H[1], j+1);
+                zAVG = iterativeAvg(xAVG, readingsL3GD20H[2], j+1);
             }
             j++;
         }
     }
+
+    drawGlyph(20, 2, 6, 255, 255, 255, (xAVG/10000)%10);
+    drawGlyph(30, 3, 6, 255, 255, 255, (xAVG/1000)%10);
+    drawGlyph(40, 4, 6, 255, 255, 255, (xAVG/100)%10);
+    drawGlyph(50, 5, 6, 255, 255, 255, (xAVG/10)%10);
+    drawGlyph(60, 6, 6, 255, 255, 255, xAVG%10);
 
     while (1) {
         warpPrint("Avg values: %d, %d, %d\n", xAVG, yAVG, zAVG);
