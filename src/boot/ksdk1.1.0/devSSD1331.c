@@ -65,7 +65,6 @@ writeCommand(uint8_t commandByte)
 static int
 writeMultipleCommand(uint8_t * commandBytes, uint8_t transferSize)
 {
-    warpPrint("%d\n", transferSize);
 
     /*
      *	Drive /CS low.
@@ -82,7 +81,6 @@ writeMultipleCommand(uint8_t * commandBytes, uint8_t transferSize)
     GPIO_DRV_ClearPinOutput(kSSD1331PinDC);
 
     int i;
-    warpPrint("Starting write\n");
     for (i = 0; i < transferSize; ++i)
     {
         SPI_DRV_MasterTransferBlocking(0	/* master instance */,
@@ -91,12 +89,10 @@ writeMultipleCommand(uint8_t * commandBytes, uint8_t transferSize)
                 (uint8_t * restrict)&inBuffer[0],
                 1		/* transfer size */,
                 1000		/* timeout in microseconds (unlike I2C which is ms) */);
-        warpPrint("%d\n", i);
-
     }
     /*
- *	Drive /CS high
- */
+     *	Drive /CS high
+     */
     GPIO_DRV_SetPinOutput(kSSD1331PinCSn);
 
     return 0;
