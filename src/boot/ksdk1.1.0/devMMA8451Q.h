@@ -44,4 +44,4 @@ WarpStatus	configureSensorMMA8451Q(uint8_t payloadF_SETUP, uint8_t payloadCTRL_R
 void		printSensorDataMMA8451Q(bool hexModeFlag);
 void  standbyMMA8451Q (void);
 void  activeMMA8451Q (void);
-int16_t *   returnSensorDataMMA8451Q(void);
+int   returnSensorDataMMA8451Q(uint16_t * readings);

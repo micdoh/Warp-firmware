@@ -133,14 +133,14 @@ typedef enum
 	*/
 	kWarpDefaultPrintBufferSizeBytes			= 64,
 	kWarpMemoryCommonSpiBufferBytes				= 64,
-	kWarpSizesI2cBufferBytes				= 4,
+	kWarpSizesI2cBufferBytes				= 6,
 	kWarpSizesSpiBufferBytes				= 7,
 	kWarpSizesUartBufferBytes				= 8,
 
 	/*
 	 *	Voltages
 	 */
-	kWarpDefaultSupplyVoltageMillivolts			= 1000,
+	kWarpDefaultSupplyVoltageMillivolts			= 1800,
 	kWarpDefaultSupplyVoltageMillivoltsMMA8451Q		= 1800,
 	kWarpDefaultSupplyVoltageMillivoltsL3GD20H		= 1800
 

@@ -319,23 +319,22 @@ printSensorDataL3GD20H(bool hexModeFlag)
 	}
 }
 
-int16_t *
-returnSensorDataL3GD20H(void)
+int
+returnSensorDataL3GD20H(uint16_t * readings)
 {
     uint16_t	    readSensorRegisterValueLSB;
     uint16_t	    readSensorRegisterValueMSB;
-    static int16_t  readings[3];
     int             i;
 
-    //warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
+    warpScaleSupplyVoltage(deviceL3GD20HState.operatingVoltageMillivolts);
 
     readSensorRegisterL3GD20H(kWarpSensorOutputRegisterL3GD20HOUT_X_L, 6 /* numberOfBytes */);
     for ( i = 0; i < 3; ++i) {
-        readSensorRegisterValueMSB = deviceMMA8451QState.i2cBuffer[i];
-        readSensorRegisterValueLSB = deviceMMA8451QState.i2cBuffer[i+1];
+        readSensorRegisterValueMSB = deviceL3GD20HState.i2cBuffer[i];
+        readSensorRegisterValueLSB = deviceL3GD20HState.i2cBuffer[i+1];
         readings[i] = ((readSensorRegisterValueMSB & 0xFF) << 8) | (readSensorRegisterValueLSB & 0xFF);
 
     }
 
-    return readings;
+    return 0;
 }

@@ -69,6 +69,7 @@ volatile WarpI2CDeviceState		deviceINA219State;
 #define							kWarpConstantStringI2cFailure		"\rI2C failed, reg 0x%02x, code %d\n"
 #define							kWarpConstantStringErrorInvalidVoltage	"\rInvalid supply voltage [%d] mV!"
 #define							kWarpConstantStringErrorSanity		"\rSanity check failed!"
+#define CHECK_BIT(var,pos) ((var) & (1<<(pos)))
 
 
 #if (WARP_BUILD_ENABLE_DEVMMA8451Q)
@@ -174,6 +175,7 @@ static void						activateAllLowPowerSensorModes(bool verbose);
 static uint8_t					readHexByte(void);
 static int						read4digits(void);
 static void						printAllSensors(bool printHeadersAndCalibration, bool hexModeFlag, int menuDelayBetweenEachRun, bool loopForever);
+float                           avg(uint16_t *, uint8_t length);
 
 /*
  *	TODO: change the following to take byte arrays
@@ -1059,6 +1061,18 @@ warpLowPowerSecondsSleep(uint32_t sleepSeconds, bool forceAllPinsIntoLowPowerSta
 	}
 }
 
+float avg(uint16_t * array, uint8_t length) {
+    int i;
+    float avg, sum = 0.0;
+
+    for (i = 0; i < length; ++i) {
+        sum += array[i];
+    }
+
+    avg = sum / length;
+    printf("Average = %.2f", avg);
+    return avg;
+}
 
 /*
 void
@@ -1971,16 +1985,16 @@ main(void)
 
 	devSSD1331init(); /* Initialize SSD1331 OLED Display */
     warpPrint("SSD1331 Initialized\n");
-    draw0(2, 20, 10, 255, 255, 255);
-    draw1(7, 20, 10, 255, 255, 255);
-    draw2(17, 20, 10, 255, 255, 255);
-    draw3(27, 20, 10, 255, 255, 255);
-    draw4(37, 20, 10, 255, 255, 255);
-    draw5(47, 20, 10, 255, 255, 255);
-    draw6(57, 20, 10, 255, 255, 255);
-    draw7(67, 20, 10, 255, 255, 255);
-    draw8(77, 20, 10, 255, 255, 255);
-    draw9(87, 20, 10, 255, 255, 255);
+    draw0(2, 20, 6, 255, 255, 255);
+    draw1(7, 20, 6, 255, 255, 255);
+    draw2(17, 20, 6, 255, 255, 255);
+    draw3(27, 20, 6, 255, 255, 255);
+    draw4(37, 20, 6, 255, 255, 255);
+    draw5(47, 20, 6, 255, 255, 255);
+    draw6(57, 20, 6, 255, 255, 255);
+    draw7(67, 20, 6, 255, 255, 255);
+    draw8(77, 20, 6, 255, 255, 255);
+    draw9(87, 20, 6, 255, 255, 255);
 
 	initINA219(0x40 /* i2cAddress */, 3300 /* Operating voltage (mV) */);
 
@@ -2032,22 +2046,50 @@ main(void)
                                0b00100000,
                                0b00000000/* normal mode, disable FIFO, disable high pass filter */
     );
-    while (1)
+
+    //clearScreen();
+    uint16_t readingsMMA8451Q[3];
+    uint16_t readingsL3GD20H[3];
+    uint16_t xreadingsL3GD20H[100];
+    uint16_t yreadingsL3GD20H[100];
+    uint16_t zreadingsL3GD20H[100];
+    uint8_t statusRegisterValue;
+    uint16_t xAVG;
+    uint16_t yAVG;
+    uint16_t zAVG;
+    int j = 0;
+    while (j < 100) {
+        readSensorRegisterL3GD20H(0x27, 1);
+        statusRegisterValue = deviceL3GD20HState.i2cBuffer[0];
+        if ((statusRegisterValue & 0x7) == 7) {
+            returnSensorDataL3GD20H(readingsL3GD20H);
+            xreadingsL3GD20H[i] = readingsL3GD20H[i];
+            yreadingsL3GD20H[i] = readingsL3GD20H[i+1];
+            zreadingsL3GD20H[i] = readingsL3GD20H[i+2];
+            j++;
+        }
+    }
+    xAVG = avg(xreadingsL3GD20H, 100);
+    yAVG = avg(yreadingsL3GD20H, 100);
+    zAVG = avg(zreadingsL3GD20H, 100);
+    warpPrint("Avg values: %d, %d, %d\n", xAVG, yAVG, zAVG);
+    /*
+    while (j < 3)
     {
         uint32_t currTime, timeStart;
 
         timeStart = OSA_TimeGetMsec();
 
-        uint16_t readingsMMA8451Q[3], readingsL3GD20H[3];
-
         do {
-            currTime = OSA_TimeGetMsec(); /* Get current time stamp */
-            readingsMMA8451Q = returnSensorDataMMA8451Q();
-            readingsL3GD20H = returnSensorDataL3GD20H();
+            currTime = OSA_TimeGetMsec(); // Get current time stamp
+            returnSensorDataMMA8451Q(readingsMMA8451Q);
+            returnSensorDataL3GD20H(readingsL3GD20H);
+            warpPrint("%d %d %d %d %d %d\n", readingsMMA8451Q[0], readingsMMA8451Q[1], readingsMMA8451Q[2], readingsL3GD20H[0], readingsL3GD20H[1], readingsL3GD20H[2]);
+        } while (1000 >= (currTime - timeStart));
 
-        } while (1000 >= time_diff(timeStart, currTime));
+        j++;
     }
-
+    */
 	while (1)
 	{
 		/*
@@ -2584,8 +2626,6 @@ printAllSensors(bool printHeadersAndCalibration, bool hexModeFlag, int menuDelay
 		warpPrint(" RTC->TSR, RTC->TPR, # Config Errors");
 		warpPrint("\n\n");
 	}
-
-    clearScreen()
 
 	do
 	{

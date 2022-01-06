@@ -312,16 +312,15 @@ printSensorDataMMA8451Q(bool hexModeFlag)
 
 
 
-int16_t *
-returnSensorDataMMA8451Q(void)
+int
+returnSensorDataMMA8451Q(uint16_t * readings)
 {
     uint16_t	    readSensorRegisterValueLSB;
     uint16_t	    readSensorRegisterValueMSB;
-    static int16_t  readings[3];
     int16_t		    readSensorRegisterValueCombined;
     int             i;
 
-    //warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
+    warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
 
     readSensorRegisterMMA8451Q(kWarpSensorOutputRegisterMMA8451QOUT_X_MSB, 6 /* numberOfBytes */);
     for ( i = 0; i < 3; ++i) {
@@ -333,8 +332,9 @@ returnSensorDataMMA8451Q(void)
 
     }
 
-    return readings;
+    return 0;
 }
+
 
 void
 standbyMMA8451Q (void)
