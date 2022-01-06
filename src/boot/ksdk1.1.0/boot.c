@@ -167,6 +167,7 @@ static void						enableTPS62740(uint16_t voltageMillivolts);
 static void						setTPS62740CommonControlLines(uint16_t voltageMillivolts);
 static void						dumpProcessorState(void);
 uint16_t                        avg(uint16_t *, uint8_t length);
+uint16_t                        iterativeAvg(uint16_t prev_avg, uint16_t cur_elem, uint8_t n);
 
 /*
  *	TODO: change the following to take byte arrays
@@ -1052,7 +1053,8 @@ warpLowPowerSecondsSleep(uint32_t sleepSeconds, bool forceAllPinsIntoLowPowerSta
 	}
 }
 
-uint16_t avg(uint16_t * array, uint8_t length) {
+uint16_t
+avg(uint16_t * array, uint8_t length) {
     int i;
     uint16_t avg;
     uint32_t sum = 0;
@@ -1064,6 +1066,13 @@ uint16_t avg(uint16_t * array, uint8_t length) {
     avg = sum / length;
     printf("Average = %d", avg);
     return avg;
+}
+
+uint16_t
+iterativeAvg(uint16_t prev_avg, uint16_t cur_elem, uint8_t n) {
+    uint16_t  result;
+    result = (((prev_avg * (n-1)) + cur_elem) / n );
+    return result;
 }
 
 /*
@@ -1575,14 +1584,11 @@ main(void) {
     //clearScreen();
     uint16_t readingsMMA8451Q[3];
     uint16_t readingsL3GD20H[3];
-    uint16_t xreadingsL3GD20H[100];
-    uint16_t yreadingsL3GD20H[100];
-    uint16_t zreadingsL3GD20H[100];
+
     uint8_t statusRegisterValue;
     uint16_t xAVG;
     uint16_t yAVG;
     uint16_t zAVG;
-    warpPrint("Beginning loop\n\n");
     int j = 0;
     while (j < 100) {
         readSensorRegisterL3GD20H(0x27, 1);
@@ -1590,18 +1596,20 @@ main(void) {
         warpPrint("Status register value: %d\n\n", statusRegisterValue);
         if ((statusRegisterValue & 0b00001000) == 8) {
             returnSensorDataL3GD20H(readingsL3GD20H);
-            xreadingsL3GD20H[i] = readingsL3GD20H[i];
-            yreadingsL3GD20H[i] = readingsL3GD20H[i + 1];
-            zreadingsL3GD20H[i] = readingsL3GD20H[i + 2];
+            if (j == 1){
+                xAVG = readingsL3GD20H[i];
+                yAVG = readingsL3GD20H[i + 1];
+                zAVG = readingsL3GD20H[i + 2];
+            }
+            else {
+                xAVG = iterativeAvg(xAVG, readingsL3GD20H[i], j+1);
+                yAVG = iterativeAvg(xAVG, readingsL3GD20H[i+1], j+1);
+                zAVG = iterativeAvg(xAVG, readingsL3GD20H[i+2], j+1);
+            }
             j++;
         }
-        warpPrint("%d", j);
     }
-    warpPrint("Done\n");
-    xAVG = avg(xreadingsL3GD20H, 100);
-    yAVG = avg(yreadingsL3GD20H, 100);
-    zAVG = avg(zreadingsL3GD20H, 100);
-    warpPrint("Done\n");
+
     while (1) {
         warpPrint("Avg values: %d, %d, %d\n", xAVG, yAVG, zAVG);
     }
