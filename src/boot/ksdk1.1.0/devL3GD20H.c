@@ -335,6 +335,11 @@ returnSensorDataL3GD20H(uint16_t * readings)
         readings[i] = ((readSensorRegisterValueMSB & 0xFF) << 8) | (readSensorRegisterValueLSB & 0xFF);
 
     }
-
     return 0;
+}
+
+int16_t
+convertFromRawL3GD20H(uint16_t raw) {
+    float sensitivity = 0.00875;  // For +/-245 dps scale (default)
+    return raw * sensitivity;
 }

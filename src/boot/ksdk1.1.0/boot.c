@@ -1318,12 +1318,12 @@ main(void) {
      *	will also be sent to the BLE if that is compiled in.
      */
     gWarpBooted = true;
-    warpPrint("Boot done.\n");
+
     initMMA8451Q(0x1D    /* i2cAddress */, kWarpDefaultSupplyVoltageMillivoltsMMA8451Q);
     initL3GD20H(0x6B    /* i2cAddress */, kWarpDefaultSupplyVoltageMillivoltsL3GD20H);
-    initINA219(0x40 /* i2cAddress */, 3300 /* Operating voltage (mV) */);
     devSSD1331init(); /* Initialize SSD1331 OLED Display */
 
+    /*
     draw0(2, 20, 6, 255, 255, 255);
     draw1(7, 20, 6, 255, 255, 255);
     draw2(17, 20, 6, 255, 255, 255);
@@ -1334,17 +1334,36 @@ main(void) {
     draw7(67, 20, 6, 255, 255, 255);
     draw8(77, 20, 6, 255, 255, 255);
     draw9(87, 20, 6, 255, 255, 255);
+     */
 
+    uint8_t linesL[8] = {0, 0, 0, 20, 0, 0, 10, 0};
+    uint8_t linese[28] = {10, 0 , 3, 0, 3, 0, 0, 3, 0, 3, 0, 6, 0, 6, 3, 10, 3, 10, 7, 10, 7, 10, 10, 6, 10, 6, 0, 6};
+    uint8_t linest[16] = {0, 20, 0, 3, 0, 3, 3, 0, 3, 0, 10, 0, 0, 10, 10, 10};
+    uint8_t linesApost[4] = {10, 20, 7, 17};
+    uint8_t liness[28] = {7, 10, 3, 10, 3, 10, 0, 7, 0, 7, 3, 5, 3, 5, 7, 5, 7, 5, 10, 3, 10, 3, 7, 0, 7, 0, 3, 0};
+    uint8_t linesR[28] = {0, 0, 0, 20, 0, 20, 8, 20, 8, 20, 10, 18, 10, 18, 10, 12, 10, 12, 8, 10, 8, 10, 0, 10, 7, 10, 10, 0};
+    uint8_t linesi[8] = {0, 0, 0, 10, 0, 12, 0, 14};
+    uint8_t linesd[16] = {10, 20, 10, 0, 10, 0, 0, 0, 0, 0, 0, 10, 0, 10, 10, 10};
+    drawChar(0, 20, 255, 255, 255, linesL, 2, 2);
+    drawChar(12, 20, 255, 255, 255, linese, 7,2);
+    drawChar(24, 20, 255, 255, 255, linest, 4,2);
+    drawChar(34, 20, 255, 255, 255, linesApost, 1,2);
+    drawChar(40, 20, 255, 255, 255, liness, 7,2);
+    drawChar(40, 50, 255, 255, 255, linesR, 7,2);
+    drawChar(55, 50, 255, 255, 255, linesi, 2,2);
+    drawChar(60, 50, 255, 255, 255, linesd, 4, 2);
+    drawChar(72, 50, 255, 255, 255, linese, 7,2);
+    OSA_TimeDelay(5000);
 
-    /* Configuration value 0b000001000101:
-        - 0-16V
-        - PGA Gain 1
-        - +/- 40mV range
-        - 12-bit ADC resolution
-        - 532 us conversion time
-        - 1 sample per measurement
-    */
-
+        /* Configuration value 0b000001000101:
+            - 0-16V
+            - PGA Gain 1
+            - +/- 40mV range
+            - 12-bit ADC resolution
+            - 532 us conversion time
+            - 1 sample per measurement
+        */
+    initINA219(0x40 /* i2cAddress */, 3300 /* Operating voltage (mV) */);
     status = writeSensorRegisterINA219(0x00, 0b000001000101);
     if (status != kWarpStatusOK) {
         warpPrint("\rINA219 configuration failed...\n");
@@ -1364,24 +1383,13 @@ main(void) {
     //{
     //    printSensorDataINA219(true, 0x01);  // Read V_shunt and convert to current (R=0.1 Ohm)
     //}
-    /*
-    activeMMA8451Q();
-    warpPrint("MMA8451Q Activated\n");
-    for ( i = 0; i < 5; ++i) {
-        readingsMMA8451Q = returnSensorDataMMA8451Q();
-        OSA_TimeDelay(1000);
-        warpPrint("X, %d, ", readingsMMA8451Q[0]);
-        warpPrint("Y, %d, ", readingsMMA8451Q[1]);
-        warpPrint("Z, %d\n", readingsMMA8451Q[2]);
-        OSA_TimeDelay(1000);
-    }
-     */
-    configureSensorMMA8451Q(0x00,/* Payload: Disable FIFO */
-                            0x05/* Normal read 8bit, 800Hz, low noise ( limited to +/-4g), active mode */
+
+    configureSensorMMA8451Q(0x00,  // Disable FIFO
+                            0x05  // Normal read 8bit, 800Hz, low noise ( limited to +/-4g), active mode
     );
-    configureSensorL3GD20H(0b11101111,/* ODR 800Hz, No cut-off, see table 21, normal mode, x,y,z enable */
+    configureSensorL3GD20H(0b11101111,  // ODR 800Hz, No cut-off, see table 21, normal mode, x,y,z enable
                            0b00100000,
-                           0b00000000/* normal mode, disable FIFO, disable high pass filter */
+                           0b00000000  // normal mode, disable FIFO, disable high pass filter
     );
 
     clearScreen();
@@ -1412,6 +1420,9 @@ main(void) {
             j++;
         }
     }
+    xAVG = convertFromRawL3GD20H(xAVG);
+    yAVG = convertFromRawL3GD20H(yAVG);
+    zAVG = convertFromRawL3GD20H(zAVG);
 
     drawGlyph(20, 2, 6, 255, 255, 255, (xAVG/10000)%10);
     drawGlyph(30, 3, 6, 255, 255, 255, (xAVG/1000)%10);
