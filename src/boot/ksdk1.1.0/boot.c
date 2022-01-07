@@ -1352,7 +1352,7 @@ main(void) {
     drawChar(40, 50, 255, 255, 255, linesR, 7,2);
     drawChar(55, 50, 255, 255, 255, linesi, 2,2);
     drawChar(60, 50, 255, 255, 255, linesd, 4, 2);
-    drawChar(72, 50, 255, 255, 255, linese, 7,2);
+    drawChar(73, 50, 255, 255, 255, linese, 7,2);
     OSA_TimeDelay(5000);
 
         /* Configuration value 0b000001000101:
@@ -1384,22 +1384,22 @@ main(void) {
     //    printSensorDataINA219(true, 0x01);  // Read V_shunt and convert to current (R=0.1 Ohm)
     //}
 
-    configureSensorMMA8451Q(0x00,  // Disable FIFO
-                            0x05  // Normal read 8bit, 800Hz, low noise ( limited to +/-4g), active mode
+    configureSensorMMA8451Q(kWarpRegisterF_SETUPValueMMA8451Q,  // Disable FIFO
+                            kWarpRegisterCTRL_REG1ValueMMA8451Q  // Normal read 8bit, 800Hz, low noise ( limited to +/-4g), active mode
     );
-    configureSensorL3GD20H(0b11101111,  // ODR 800Hz, No cut-off, see table 21, normal mode, x,y,z enable
-                           0b00100000,
-                           0b00000000  // normal mode, disable FIFO, disable high pass filter
+    configureSensorL3GD20H(kWarpRegisterCTRL1ValueL3GD20H,  // ODR 800Hz, No cut-off, see table 21, normal mode, x,y,z enable
+                           kWarpRegisterCTRL1ValueL3GD20H,
+                           kWarpRegisterCTRL1ValueL3GD20H  // normal mode, disable FIFO, disable high pass filter
     );
 
     clearScreen();
-    uint16_t readingsMMA8451Q[3];
-    uint16_t readingsL3GD20H[3];
+    int16_t readingsMMA8451Q[3];
+    int16_t readingsL3GD20H[3];
 
     uint8_t statusRegisterValue;
-    uint16_t xAVG;
-    uint16_t yAVG;
-    uint16_t zAVG;
+    int16_t xAVG;
+    int16_t yAVG;
+    int16_t zAVG;
     int j = 0;
     while (j < 100) {
         readSensorRegisterL3GD20H(0x27, 1);
@@ -1407,31 +1407,52 @@ main(void) {
         warpPrint("Status register value: %d\n\n", statusRegisterValue);
         if ((statusRegisterValue & 0b00001000) == 8) {
             returnSensorDataL3GD20H(readingsL3GD20H);
-            if (j == 0){
+            if (j == 0) {
                 xAVG = readingsL3GD20H[j];
-                yAVG = readingsL3GD20H[j+1];
-                zAVG = readingsL3GD20H[j+2];
-            }
-            else {
-                xAVG = iterativeAvg(xAVG, readingsL3GD20H[0], j+1);
-                yAVG = iterativeAvg(xAVG, readingsL3GD20H[1], j+1);
-                zAVG = iterativeAvg(xAVG, readingsL3GD20H[2], j+1);
+                yAVG = readingsL3GD20H[j + 1];
+                zAVG = readingsL3GD20H[j + 2];
+            } else {
+                xAVG = iterativeAvg(xAVG, readingsL3GD20H[0], j + 1);
+                yAVG = iterativeAvg(xAVG, readingsL3GD20H[1], j + 1);
+                zAVG = iterativeAvg(xAVG, readingsL3GD20H[2], j + 1);
             }
             j++;
         }
     }
-    xAVG = convertFromRawL3GD20H(xAVG);
-    yAVG = convertFromRawL3GD20H(yAVG);
-    zAVG = convertFromRawL3GD20H(zAVG);
 
-    drawGlyph(20, 2, 6, 255, 255, 255, (xAVG/10000)%10);
-    drawGlyph(30, 3, 6, 255, 255, 255, (xAVG/1000)%10);
-    drawGlyph(40, 4, 6, 255, 255, 255, (xAVG/100)%10);
-    drawGlyph(50, 5, 6, 255, 255, 255, (xAVG/10)%10);
-    drawGlyph(60, 6, 6, 255, 255, 255, xAVG%10);
+    //xAVG = convertFromRawL3GD20H(xAVG);
+    //yAVG = convertFromRawL3GD20H(yAVG);
+    //zAVG = convertFromRawL3GD20H(zAVG);
+
+    drawGlyph(10, 25, 10, 255, 255, 255, (xAVG / 10000) % 10);
+    drawGlyph(25, 25, 10, 255, 255, 255, (xAVG / 1000) % 10);
+    drawGlyph(40, 25, 10, 255, 255, 255, (xAVG / 100) % 10);
+    drawGlyph(55, 25, 10, 255, 255, 255, (xAVG / 10) % 10);
+    drawGlyph(70, 25, 10, 255, 255, 255, xAVG % 10);
 
     while (1) {
-        warpPrint("Avg values: %d, %d, %d\n", xAVG, yAVG, zAVG);
+        float xGyro, yGyro, zGyro, xAccel, yAccel, zAccel;
+        returnSensorDataL3GD20H(readingsL3GD20H);
+        readSensorRegisterL3GD20H(0x27, 1);
+        statusRegisterValue = deviceL3GD20HState.i2cBuffer[0];
+        if ((statusRegisterValue & 0b00001000) == 8) {
+            returnSensorDataL3GD20H(readingsL3GD20H);
+            xGyro = readingsL3GD20H[0];//convertFromRawL3GD20H(readingsL3GD20H[0]);
+            yGyro = readingsL3GD20H[1];//convertFromRawL3GD20H(readingsL3GD20H[1]);
+            zGyro = readingsL3GD20H[2];//convertFromRawL3GD20H(readingsL3GD20H[2]);
+        }
+        readSensorRegisterMMA8451Q(0x00, 1);
+        statusRegisterValue = deviceMMA8451QState.i2cBuffer[0];
+        if ((statusRegisterValue & 0b00001000) == 8) {
+            returnSensorDataMMA8451Q(readingsMMA8451Q);
+            xAccel = readingsMMA8451Q[0];//convertFromRawMMA8451Q(readingsMMA8451Q[0]);
+            yAccel = readingsMMA8451Q[1];//convertFromRawMMA8451Q(readingsMMA8451Q[1]);
+            zAccel = readingsMMA8451Q[2];//convertFromRawMMA8451Q(readingsMMA8451Q[2]);
+        }
+        OSA_TimeDelay(1000);
+        warpPrint("xGyro, yGyro, zGyro, xAccel, yAccel, zAccel\n");
+        //warpPrint("%f, %f, %f, %f, %f, %f\n", xGyro, yGyro, zGyro, xAccel, yAccel, zAccel);
+        warpPrint("%d, %d, %d, %d, %d, %d\n", xGyro, yGyro, zGyro, xAccel, yAccel, zAccel);
     }
 
     /*

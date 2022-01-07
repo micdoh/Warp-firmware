@@ -207,7 +207,6 @@ clearScreen(void){
 
 int
 drawChar(uint8_t startCol, uint8_t startRow, uint8_t r, uint8_t g, uint8_t b, uint8_t * lines, uint8_t nLines, uint8_t weight){
-    warpPrint("Size of lines: %d\n", nLines);
     int j = 0;
     int i;
     int offset;

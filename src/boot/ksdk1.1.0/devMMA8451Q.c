@@ -313,11 +313,12 @@ printSensorDataMMA8451Q(bool hexModeFlag)
 
 
 int
-returnSensorDataMMA8451Q(uint16_t * readings)
+returnSensorDataMMA8451Q(int16_t * readings)
 {
     uint16_t	    readSensorRegisterValueLSB;
     uint16_t	    readSensorRegisterValueMSB;
     int16_t		    readSensorRegisterValueCombined;
+
     int             i;
 
     warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
@@ -328,45 +329,15 @@ returnSensorDataMMA8451Q(uint16_t * readings)
         readSensorRegisterValueLSB = deviceMMA8451QState.i2cBuffer[i+1];
         readSensorRegisterValueCombined = ((readSensorRegisterValueMSB & 0xFF) << 6) | (readSensorRegisterValueLSB >> 2);
         //	Sign extend the 14-bit value based on knowledge that upper 2 bit are 0:
-        readings[i] = (readSensorRegisterValueCombined ^ (1 << 13)) - (1 << 13);
-
+        readSensorRegisterValueCombined = ((readSensorRegisterValueCombined ^ (1 << 13)) - (1 << 13));
+        if
     }
 
     return 0;
 }
 
-
-void
-standbyMMA8451Q (void)
-{
-    /*
-    ** Read current value of System Control 1 Register.
-    ** Put sensor into Standby Mode by clearing the Active bit
-    ** Return with previous value of System Control 1 Register.
-    */
-    uint8_t        n;
-    //WarpStatus  i2cReadStatus, i2cWriteStatus;
-
-    readSensorRegisterMMA8451Q(CTRL_REG1, 1 /* numberOfBytes */);
-    n = deviceMMA8451QState.i2cBuffer[0];
-
-    writeSensorRegisterMMA8451Q(CTRL_REG1, n & ~ACTIVE_MASK);
-
-}
-
-void
-activeMMA8451Q (void)
-{
-    /*
-    ** Set the Active bit in CTRL Reg 1
-    */
-
-    //WarpStatus  i2cReadStatus, i2cWriteStatus;
-    uint8_t        regVal;
-
-    readSensorRegisterMMA8451Q(CTRL_REG1, 1 /* numberOfBytes */);
-    regVal = deviceMMA8451QState.i2cBuffer[0];
-
-    writeSensorRegisterMMA8451Q(CTRL_REG1, regVal | ACTIVE_MASK);
-
+uint8_t *
+convertFromRawMMA8451Q(int16_t raw) {
+    float sensitivity = 1/2048 ;  // For +/-4g scale (low noise)
+    return (float) raw * sensitivity;
 }

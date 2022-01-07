@@ -41,5 +41,5 @@ WarpStatus	readSensorRegisterL3GD20H(uint8_t deviceRegister, int numberOfBytes);
 WarpStatus	writeSensorRegisterL3GD20H(uint8_t deviceRegister, uint8_t payload);//, uint16_t menuI2cPullupValue);
 WarpStatus	configureSensorL3GD20H(uint8_t payloadCTRL1, uint8_t payloadCTRL2, uint8_t payloadCTRL5);//, uint16_t menuI2cPullupValue);
 void		printSensorDataL3GD20H(bool hexModeFlag);
-int returnSensorDataL3GD20H(uint16_t * readings);
-uint16_t convertFromRawL3GD20H(uint16_t raw);
+int returnSensorDataL3GD20H(int16_t * readings);
+float convertFromRawL3GD20H(int16_t raw);

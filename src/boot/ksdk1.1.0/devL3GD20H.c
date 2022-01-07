@@ -320,7 +320,7 @@ printSensorDataL3GD20H(bool hexModeFlag)
 }
 
 int
-returnSensorDataL3GD20H(uint16_t * readings)
+returnSensorDataL3GD20H(int16_t * readings)
 {
     uint16_t	    readSensorRegisterValueLSB;
     uint16_t	    readSensorRegisterValueMSB;
@@ -333,13 +333,12 @@ returnSensorDataL3GD20H(uint16_t * readings)
         readSensorRegisterValueMSB = deviceL3GD20HState.i2cBuffer[i];
         readSensorRegisterValueLSB = deviceL3GD20HState.i2cBuffer[i+1];
         readings[i] = ((readSensorRegisterValueMSB & 0xFF) << 8) | (readSensorRegisterValueLSB & 0xFF);
-
     }
     return 0;
 }
 
-int16_t
-convertFromRawL3GD20H(uint16_t raw) {
+uint8_t *
+convertFromRawL3GD20H(int16_t raw) {
     float sensitivity = 0.00875;  // For +/-245 dps scale (default)
-    return raw * sensitivity;
+    return (float) raw * sensitivity;
 }
