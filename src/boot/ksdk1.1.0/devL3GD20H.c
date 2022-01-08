@@ -133,16 +133,13 @@ configureSensorL3GD20H(uint8_t payloadCTRL1, uint8_t payloadCTRL2, uint8_t paylo
 	warpScaleSupplyVoltage(deviceL3GD20HState.operatingVoltageMillivolts);
 
 	status1 = writeSensorRegisterL3GD20H(kWarpSensorConfigurationRegisterL3GD20HCTRL1 /* register address CTRL1 */,
-							payloadCTRL1); /* payload */
-							//menuI2cPullupValue);
+							payloadCTRL1);
 
 	status2 = writeSensorRegisterL3GD20H(kWarpSensorConfigurationRegisterL3GD20HCTRL2 /* register address CTRL2 */,
-							payloadCTRL2); /* payload */
-							//menuI2cPullupValue);
+							payloadCTRL2);
 
 	status3 = writeSensorRegisterL3GD20H(kWarpSensorConfigurationRegisterL3GD20HCTRL5 /* register address CTRL5 */,
-							payloadCTRL5); /* payload */
-							//menuI2cPullupValue);
+							payloadCTRL5);
 
 	return (status1 | status2 | status3);
 }
@@ -339,6 +336,6 @@ returnSensorDataL3GD20H(int16_t * readings)
 
 uint8_t *
 convertFromRawL3GD20H(int16_t raw) {
-    float sensitivity = 0.00875;  // For +/-245 dps scale (default)
+    uint16_t sensitivity = 0.00875;  // For +/-245 dps scale (default)
     return (float) raw * sensitivity;
 }

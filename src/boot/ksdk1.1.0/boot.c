@@ -1385,11 +1385,11 @@ main(void) {
     //}
 
     configureSensorMMA8451Q(kWarpRegisterF_SETUPValueMMA8451Q,  // Disable FIFO
-                            kWarpRegisterCTRL_REG1ValueMMA8451Q  // Normal read 8bit, 800Hz, low noise ( limited to +/-4g), active mode
-    );
+                            kWarpRegisterCTRL_REG1ValueMMA8451Q,  // Normal read 8bit, 800Hz, low noise ( limited to +/-4g), active mode
+                            kWarpRegisterXYX_DATA_CFGValueMMA8451Q);
     configureSensorL3GD20H(kWarpRegisterCTRL1ValueL3GD20H,  // ODR 800Hz, No cut-off, see table 21, normal mode, x,y,z enable
-                           kWarpRegisterCTRL1ValueL3GD20H,
-                           kWarpRegisterCTRL1ValueL3GD20H  // normal mode, disable FIFO, disable high pass filter
+                           kWarpRegisterCTRL2ValueL3GD20H,
+                           kWarpRegisterCTRL3ValueL3GD20H  // normal mode, disable FIFO, disable high pass filter
     );
 
     clearScreen();
