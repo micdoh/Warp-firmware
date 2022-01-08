@@ -1336,6 +1336,7 @@ main(void) {
     draw9(87, 20, 6, 255, 255, 255);
      */
 
+
     uint8_t linesL[8] = {0, 0, 0, 20, 0, 0, 10, 0};
     uint8_t linese[28] = {10, 0 , 3, 0, 3, 0, 0, 3, 0, 3, 0, 6, 0, 6, 3, 10, 3, 10, 7, 10, 7, 10, 10, 6, 10, 6, 0, 6};
     uint8_t linest[16] = {0, 20, 0, 3, 0, 3, 3, 0, 3, 0, 10, 0, 0, 10, 10, 10};
@@ -1386,76 +1387,92 @@ main(void) {
 
     configureSensorMMA8451Q(kWarpRegisterF_SETUPValueMMA8451Q,  // Disable FIFO
                             kWarpRegisterCTRL_REG1ValueMMA8451Q,  // Normal read 8bit, 800Hz, low noise ( limited to +/-4g), active mode
-                            kWarpRegisterXYX_DATA_CFGValueMMA8451Q);
+                            kWarpRegisterXYZ_DATA_CFGValueMMA8451Q);
     configureSensorL3GD20H(kWarpRegisterCTRL1ValueL3GD20H,  // ODR 800Hz, No cut-off, see table 21, normal mode, x,y,z enable
                            kWarpRegisterCTRL2ValueL3GD20H,
-                           kWarpRegisterCTRL3ValueL3GD20H  // normal mode, disable FIFO, disable high pass filter
+                           kWarpRegisterCTRL5ValueL3GD20H  // normal mode, disable FIFO, disable high pass filter
     );
+    /*
+    uint8_t digits[6];
+    int16_t test = 0b1111111111111111;
+    convertFromRawMMA8451Q(test, digits);
+    warpPrint("Test digits: %d %d %d %d %d %d\n", digits[0], digits[1], digits[2], digits[3], digits[4], digits[5]);
+    */
 
     clearScreen();
     int16_t readingsMMA8451Q[3];
     int16_t readingsL3GD20H[3];
 
     uint8_t statusRegisterValue;
-    int16_t xAVG;
-    int16_t yAVG;
-    int16_t zAVG;
+    int16_t zeroRateX, zeroRateY, zeroRateZ;
+    int16_t xGyro, yGyro, zGyro, xAccel, yAccel, zAccel;
+
     int j = 0;
     while (j < 100) {
         readSensorRegisterL3GD20H(0x27, 1);
         statusRegisterValue = deviceL3GD20HState.i2cBuffer[0];
-        warpPrint("Status register value: %d\n\n", statusRegisterValue);
+        //warpPrint("Status register value: %d\n\n", statusRegisterValue);
         if ((statusRegisterValue & 0b00001000) == 8) {
             returnSensorDataL3GD20H(readingsL3GD20H);
             if (j == 0) {
-                xAVG = readingsL3GD20H[j];
-                yAVG = readingsL3GD20H[j + 1];
-                zAVG = readingsL3GD20H[j + 2];
+                zeroRateX = readingsL3GD20H[j];
+                zeroRateY = readingsL3GD20H[j + 1];
+                zeroRateZ = readingsL3GD20H[j + 2];
             } else {
-                xAVG = iterativeAvg(xAVG, readingsL3GD20H[0], j + 1);
-                yAVG = iterativeAvg(xAVG, readingsL3GD20H[1], j + 1);
-                zAVG = iterativeAvg(xAVG, readingsL3GD20H[2], j + 1);
+                zeroRateX = iterativeAvg(zeroRateX, readingsL3GD20H[0], j + 1);
+                zeroRateY = iterativeAvg(zeroRateX, readingsL3GD20H[1], j + 1);
+                zeroRateZ = iterativeAvg(zeroRateX, readingsL3GD20H[2], j + 1);
             }
             j++;
         }
     }
 
-    //xAVG = convertFromRawL3GD20H(xAVG);
-    //yAVG = convertFromRawL3GD20H(yAVG);
-    //zAVG = convertFromRawL3GD20H(zAVG);
-
-    drawGlyph(10, 25, 10, 255, 255, 255, (xAVG / 10000) % 10);
-    drawGlyph(25, 25, 10, 255, 255, 255, (xAVG / 1000) % 10);
-    drawGlyph(40, 25, 10, 255, 255, 255, (xAVG / 100) % 10);
-    drawGlyph(55, 25, 10, 255, 255, 255, (xAVG / 10) % 10);
-    drawGlyph(70, 25, 10, 255, 255, 255, xAVG % 10);
-
+    drawGlyph(10, 25, 10, 255, 255, 255, (zeroRateX / 10000) % 10);
+    drawGlyph(25, 25, 10, 255, 255, 255, (zeroRateX / 1000) % 10);
+    drawGlyph(40, 25, 10, 255, 255, 255, (zeroRateX / 100) % 10);
+    drawGlyph(55, 25, 10, 255, 255, 255, (zeroRateX / 10) % 10);
+    drawGlyph(70, 25, 10, 255, 255, 255, zeroRateX % 10);
+    OSA_TimeDelay(2000);
+    clearScreen();
+    warpPrint("xGyro, yGyro, zGyro, xAccel, yAccel, zAccel\n");
     while (1) {
-        float xGyro, yGyro, zGyro, xAccel, yAccel, zAccel;
         returnSensorDataL3GD20H(readingsL3GD20H);
         readSensorRegisterL3GD20H(0x27, 1);
         statusRegisterValue = deviceL3GD20HState.i2cBuffer[0];
         if ((statusRegisterValue & 0b00001000) == 8) {
             returnSensorDataL3GD20H(readingsL3GD20H);
-            xGyro = readingsL3GD20H[0];//convertFromRawL3GD20H(readingsL3GD20H[0]);
-            yGyro = readingsL3GD20H[1];//convertFromRawL3GD20H(readingsL3GD20H[1]);
-            zGyro = readingsL3GD20H[2];//convertFromRawL3GD20H(readingsL3GD20H[2]);
+            xGyro = readingsL3GD20H[0];
+            yGyro = readingsL3GD20H[1];
+            zGyro = readingsL3GD20H[2];
         }
         readSensorRegisterMMA8451Q(0x00, 1);
         statusRegisterValue = deviceMMA8451QState.i2cBuffer[0];
         if ((statusRegisterValue & 0b00001000) == 8) {
             returnSensorDataMMA8451Q(readingsMMA8451Q);
-            xAccel = readingsMMA8451Q[0];//convertFromRawMMA8451Q(readingsMMA8451Q[0]);
-            yAccel = readingsMMA8451Q[1];//convertFromRawMMA8451Q(readingsMMA8451Q[1]);
-            zAccel = readingsMMA8451Q[2];//convertFromRawMMA8451Q(readingsMMA8451Q[2]);
+            xAccel = readingsMMA8451Q[0];
+            yAccel = readingsMMA8451Q[1];
+            zAccel = readingsMMA8451Q[2];
         }
-        OSA_TimeDelay(1000);
-        warpPrint("xGyro, yGyro, zGyro, xAccel, yAccel, zAccel\n");
-        //warpPrint("%f, %f, %f, %f, %f, %f\n", xGyro, yGyro, zGyro, xAccel, yAccel, zAccel);
+        warpPrint("%d, %d, %d, %d, %d, %d\n", xGyro, yGyro, zGyro, xAccel, yAccel, zAccel);
+
+        uint8_t digits[6];
+        convertFromRawMMA8451Q(xAccel, digits);
+        if (digits[0] == 1) {
+            drawMinus(2, 25, 8, 255, 255, 255);
+        }
+        drawGlyph(20, 25, 8, 255, 255, 255, digits[1]);
+        drawPoint(33, 25, 8, 255, 255, 255);
+        drawGlyph(46, 25, 8, 255, 255, 255, digits[2]);
+        drawGlyph(59, 25, 8, 255, 255, 255, digits[3]);
+        drawGlyph(71, 25, 8, 255, 255, 255, digits[4]);
+        drawGlyph(84, 25, 8, 255, 255, 255, digits[5]);
+        //OSA_TimeDelay(1000);
+
+
         warpPrint("%d, %d, %d, %d, %d, %d\n", xGyro, yGyro, zGyro, xAccel, yAccel, zAccel);
     }
 
-    /*
+
     while (j < 3)
     {
         uint32_t currTime, timeStart;
@@ -1471,6 +1488,6 @@ main(void) {
 
         j++;
     }
-    */
+
     return 0;
 }

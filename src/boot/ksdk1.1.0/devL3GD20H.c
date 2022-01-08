@@ -317,7 +317,7 @@ printSensorDataL3GD20H(bool hexModeFlag)
 }
 
 int
-returnSensorDataL3GD20H(int16_t * readings)
+returnSensorDataL3GD20H(int16_t readings[3])
 {
     uint16_t	    readSensorRegisterValueLSB;
     uint16_t	    readSensorRegisterValueMSB;
@@ -334,8 +334,8 @@ returnSensorDataL3GD20H(int16_t * readings)
     return 0;
 }
 
-uint8_t *
+/*uint8_t *
 convertFromRawL3GD20H(int16_t raw) {
     uint16_t sensitivity = 0.00875;  // For +/-245 dps scale (default)
     return (float) raw * sensitivity;
-}
+}*/

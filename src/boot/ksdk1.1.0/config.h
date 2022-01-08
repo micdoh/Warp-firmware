@@ -147,11 +147,11 @@ typedef enum
     /*
      *  Configuration registers
      */
-    kWarpRegisterCTRL1ValueL3GD20H = 0b11101111;  // ODR 800Hz, No cut-off, see table 21, normal mode, x,y,z enable
-    kWarpRegisterCTRL2ValueL3GD20H = 0b00100000;
-    kWarpRegisterCTRL5ValueL3GD20H = 0b00000000;  // normal mode, disable FIFO, disable high pass filter
-    kWarpRegisterF_SETUPValueMMA8451Q = 0x00,      // Disable FIFO
-    kWarpRegisterCTRL_REG1ValueMMA8451Q = 0x05;   // Normal read 8bit, 800Hz, low noise (limited to +/-4g), active mode
-    kWarpRegisterXYX_DATA_CFGValueMMA8451Q = 0x01;  // No high-pass filter, +/-4g range
+    kWarpRegisterCTRL1ValueL3GD20H = 0b11111111,  // ODR 800Hz, No cut-off, see table 21, normal mode, x,y,z enable
+    kWarpRegisterCTRL2ValueL3GD20H = 0b00100000,
+    kWarpRegisterCTRL5ValueL3GD20H = 0b00000000,  // normal mode, disable FIFO, disable high pass filter
+    kWarpRegisterF_SETUPValueMMA8451Q = 0x00,   // Disable FIFO
+    kWarpRegisterCTRL_REG1ValueMMA8451Q = 0x05,   // Normal read 8bit, 800Hz, low noise (limited to +/-4g), active mode
+    kWarpRegisterXYZ_DATA_CFGValueMMA8451Q = 0x01,  // No high-pass filter, +/-4g range
 
 } WarpDefaults;

@@ -132,8 +132,7 @@ writeSensorRegisterMMA8451Q(uint8_t deviceRegister, uint8_t payload)
 WarpStatus
 configureSensorMMA8451Q(uint8_t payloadF_SETUP, uint8_t payloadCTRL_REG1, uint8_t payloadXYZ_DATA_CFG)
 {
-	WarpStatus	i2cWriteStatus1, i2cWriteStatus2;
-
+	WarpStatus	i2cWriteStatus1, i2cWriteStatus2, i2cWriteStatus3;
 
 	warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
 
@@ -149,7 +148,7 @@ configureSensorMMA8451Q(uint8_t payloadF_SETUP, uint8_t payloadCTRL_REG1, uint8_
                                                   payloadXYZ_DATA_CFG
     );
 
-	return (i2cWriteStatus1 | i2cWriteStatus2);
+	return (i2cWriteStatus1 | i2cWriteStatus2 | i2cWriteStatus3);
 }
 
 WarpStatus
@@ -317,13 +316,23 @@ printSensorDataMMA8451Q(bool hexModeFlag)
 
 
 int
-returnSensorDataMMA8451Q(int16_t * readings)
+returnSensorDataMMA8451Q(int16_t readings[3])
 {
     uint16_t	    readSensorRegisterValueLSB;
     uint16_t	    readSensorRegisterValueMSB;
     int16_t		    readSensorRegisterValueCombined;
-    uint16_t        scaleFactor;
+    int16_t         scaleFactor;
     int             i;
+
+    #if ((kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011) == 0b00000000)
+        scaleFactor = 4096;
+    #endif
+    #if ((kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011) == 0b00000001)
+        scaleFactor = 2048;
+    #endif
+    #if ((kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011) == 0b0000010)
+        scaleFactor = 1024;
+    #endif
 
     warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
 
@@ -334,68 +343,55 @@ returnSensorDataMMA8451Q(int16_t * readings)
         readSensorRegisterValueCombined = ((readSensorRegisterValueMSB & 0xFF) << 6) | (readSensorRegisterValueLSB >> 2);
         //	Sign extend the 14-bit value based on knowledge that upper 2 bit are 0:
         readSensorRegisterValueCombined = ((readSensorRegisterValueCombined ^ (1 << 13)) - (1 << 13));
-        if (kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011 == 0b0000000) {
-            scaleFactor = 4096;
-        }
-        else if (kWarpRegisterCTRL_REG1ValueMMA8451Q & 0b00000100 == 0b00000100) {
-            scaleFactor = 2048;
-        }
-        else if (kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011 == 0b0000001) {
-            scaleFactor = 2048;
-        }
-        else (kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011 == 0b0000010) {
-            scaleFactor = 1024;
-        }
-        readings[i] = readSensorRegisterValueCombined / scaleFactor;
+        readings[i] = readSensorRegisterValueCombined;// / 2048;
     }
 
     return 0;
 }
 
-uint8_t *
-convertFromRawMMA8451Q(int16_t raw) {
-    #define FRAC_2d1 5000
-    #define FRAC_2d2 2500
-    #define FRAC_2d3 1250
-    #define FRAC_2d4 625
-    #define FRAC_2d5 313
-    #define FRAC_2d6 156
-    #define FRAC_2d7 78
-    #define FRAC_2d8 39
-    #define FRAC_2d9 20
-    #define FRAC_2d10 10
-    #define FRAC_2d11 5
-    #define FRAC_2d12 2
+int
+convertFromRawMMA8451Q(int16_t raw, uint8_t * digits) {
     uint8_t sign = 0;
     uint8_t digit;
     uint16_t fracDigits = 0;
     uint16_t frac = 5000;
     int i;
+
     if (raw < 0) {
-        sign = 1;
+        sign = 1;  // Indicates negative number
     }
-    if (kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011 == 0b0000000) {
-        digit = (raw & 0x4000) >> 6;
-        raw = raw << 2;
-    }
-    else if (kWarpRegisterCTRL_REG1ValueMMA8451Q & 0b00000100 == 0b00000100) {
-        digit = (raw & 0x6000) >> 5;
+    //warpPrint("XYS Reg: %d\n", kWarpRegisterXYZ_DATA_CFGValueMMA8451Q);
+    int regand = kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011;
+    //warpPrint("%d\n", regand);
+    //#if ((/*kWarpRegisterXYZ_DATA_CFGValueMMA8451Q*/0x01 & 0b00000011) == 0) // +/- 2g range
+    //    warpPrint("2g range\n");
+    //    digit = (raw & 0x4000) >> 14;
+    //    raw = raw << 2;
+    //#endif
+    //#if ((kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011) == 1) // +/- 4g
+        //warpPrint("4g range\n");
+        digit = (raw & 0x6000) >> 13;
         raw = raw << 3;
-    }
-    else if (kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011 == 0b0000001) {
-        digit = (raw & 0x6000) >> 5;
-        raw = raw << 3;
-    }
-    else (kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011 == 0b0000010) {
-        digit = (raw & 0x7000) >> 4;
-        raw = raw << 4;
-    }
+    //#endif
+    //#if ((kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011) == 2) // +/- 8g range
+    //    warpPrint("8g range\n");
+    //    digit = (raw & 0x7000) >> 12;
+    //    raw = raw << 4;
+    //#endif
     for (i = 0; i < 16; i++) {
-        if (raw & 0x8000 == 0x8000) {
+        if ((raw & 0x8000) == 0x8000) {
             fracDigits += frac;
+            frac = frac / 2;
             raw = raw << 1;
         }
     }
-// TODO - Sort out the return value
-    return (float) raw * sensitivity;
+
+    digits[0] = sign;
+    digits[1] = digit;
+    digits[2] = (fracDigits / 1000) % 10;
+    digits[3] = (fracDigits / 100) % 10;
+    digits[4] = (fracDigits / 10) % 10;
+    digits[5] = fracDigits % 10;
+
+    return 0;
 }

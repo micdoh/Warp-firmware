@@ -229,6 +229,24 @@ drawChar(uint8_t startCol, uint8_t startRow, uint8_t r, uint8_t g, uint8_t b, ui
 }
 
 int
+drawPoint(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+    uint8_t commands[11] = {
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale-(scale/4), startCol+(scale/4), startRow+scale+scale, r, g, b, r, g, b,
+    };
+    writeMultipleCommand(commands, 11);
+    return 0;
+}
+
+int
+drawMinus(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+    uint8_t commands[11] = {
+            kSSD1331CommandDRAWRECT, startCol+1, startRow+scale-1, startCol+scale-1, startRow+scale+1, r, g, b, 0, 0, 0,
+    };
+    writeMultipleCommand(commands, 11);
+    return 0;
+}
+
+int
 draw0(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
     uint8_t commands[66] = {
             kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
