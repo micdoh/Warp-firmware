@@ -82,10 +82,16 @@ typedef enum
 {
 	kWarpSensorConfigurationRegisterMMA8451QF_SETUP			= 0x09,
 	kWarpSensorConfigurationRegisterMMA8451QCTRL_REG1		= 0x2A,
+    kWarpSensorConfigurationRegisterMMA8451QCTRL_REG2       = 0x2B,
+    kWarpSensorConfigurationRegisterMMA8451QCTRL_REG3       = 0x2C,
+    kWarpSensorConfigurationRegisterMMA8451QCTRL_REG4       = 0x2D,
+    kWarpSensorConfigurationRegisterMMA8451QCTRL_REG5       = 0x2E,
     kWarpSensorConfigurationRegisterMMA8451QXYZ_DATA_CFG    = 0x0E,
 
 	kWarpSensorConfigurationRegisterL3GD20HCTRL1			= 0x20,
 	kWarpSensorConfigurationRegisterL3GD20HCTRL2			= 0x21,
+    kWarpSensorConfigurationRegisterL3GD20HCTRL3			= 0x22,
+    kWarpSensorConfigurationRegisterL3GD20HCTRL4			= 0x23,
 	kWarpSensorConfigurationRegisterL3GD20HCTRL5			= 0x24,
 
 } WarpSensorConfigurationRegister;

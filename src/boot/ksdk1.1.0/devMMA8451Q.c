@@ -136,6 +136,11 @@ configureSensorMMA8451Q(uint8_t payloadF_SETUP, uint8_t payloadCTRL_REG1, uint8_
 
 	warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
 
+    // Reset registers to defaults to begin
+    writeSensorRegisterMMA8451Q(kWarpSensorConfigurationRegisterMMA8451QCTRL_REG2 /* register address F_SETUP */,
+                                0x40
+    );
+
 	i2cWriteStatus1 = writeSensorRegisterMMA8451Q(kWarpSensorConfigurationRegisterMMA8451QF_SETUP /* register address F_SETUP */,
 							payloadF_SETUP
 							);
@@ -324,26 +329,16 @@ returnSensorDataMMA8451Q(int16_t readings[3])
     int16_t         scaleFactor;
     int             i;
 
-    #if ((kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011) == 0b00000000)
-        scaleFactor = 4096;
-    #endif
-    #if ((kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011) == 0b00000001)
-        scaleFactor = 2048;
-    #endif
-    #if ((kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011) == 0b0000010)
-        scaleFactor = 1024;
-    #endif
-
     warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
 
     readSensorRegisterMMA8451Q(kWarpSensorOutputRegisterMMA8451QOUT_X_MSB, 6 /* numberOfBytes */);
-    for ( i = 0; i < 3; ++i) {
+    for ( i = 0; i < 6; i+=2) {
         readSensorRegisterValueMSB = deviceMMA8451QState.i2cBuffer[i];
         readSensorRegisterValueLSB = deviceMMA8451QState.i2cBuffer[i+1];
         readSensorRegisterValueCombined = ((readSensorRegisterValueMSB & 0xFF) << 6) | (readSensorRegisterValueLSB >> 2);
         //	Sign extend the 14-bit value based on knowledge that upper 2 bit are 0:
         readSensorRegisterValueCombined = ((readSensorRegisterValueCombined ^ (1 << 13)) - (1 << 13));
-        readings[i] = readSensorRegisterValueCombined;// / 2048;
+        readings[i] = readSensorRegisterValueCombined;
     }
 
     return 0;
@@ -360,9 +355,6 @@ convertFromRawMMA8451Q(int16_t raw, uint8_t * digits) {
     if (raw < 0) {
         sign = 1;  // Indicates negative number
     }
-    //warpPrint("XYS Reg: %d\n", kWarpRegisterXYZ_DATA_CFGValueMMA8451Q);
-    int regand = kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011;
-    //warpPrint("%d\n", regand);
     //#if ((/*kWarpRegisterXYZ_DATA_CFGValueMMA8451Q*/0x01 & 0b00000011) == 0) // +/- 2g range
     //    warpPrint("2g range\n");
     //    digit = (raw & 0x4000) >> 14;

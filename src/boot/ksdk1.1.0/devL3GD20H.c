@@ -326,7 +326,7 @@ returnSensorDataL3GD20H(int16_t readings[3])
     warpScaleSupplyVoltage(deviceL3GD20HState.operatingVoltageMillivolts);
 
     readSensorRegisterL3GD20H(kWarpSensorOutputRegisterL3GD20HOUT_X_L, 6 /* numberOfBytes */);
-    for ( i = 0; i < 3; ++i) {
+    for ( i = 0; i < 6; i+=2) {
         readSensorRegisterValueMSB = deviceL3GD20HState.i2cBuffer[i];
         readSensorRegisterValueLSB = deviceL3GD20HState.i2cBuffer[i+1];
         readings[i] = ((readSensorRegisterValueMSB & 0xFF) << 8) | (readSensorRegisterValueLSB & 0xFF);

@@ -233,26 +233,6 @@ callback0(power_manager_notify_struct_t *  notify, power_manager_callback_data_t
 
 
 void
-sleepUntilReset(void)
-{
-	while (1)
-	{
-		#if (WARP_BUILD_ENABLE_DEVSI4705)
-			GPIO_DRV_SetPinOutput(kWarpPinSI4705_nRST);
-		#endif
-
-		warpLowPowerSecondsSleep(1, false /* forceAllPinsIntoLowPowerState */);
-
-		#if (WARP_BUILD_ENABLE_DEVSI4705)
-			GPIO_DRV_ClearPinOutput(kWarpPinSI4705_nRST);
-		#endif
-
-		warpLowPowerSecondsSleep(60, true /* forceAllPinsIntoLowPowerState */);
-	}
-}
-
-
-void
 enableLPUARTpins(void)
 {
 	/*
@@ -333,7 +313,6 @@ disableLPUARTpins(void)
 }
 
 
-
 WarpStatus
 sendBytesToUART(uint8_t *  bytes, size_t nbytes)
 {
@@ -347,7 +326,6 @@ sendBytesToUART(uint8_t *  bytes, size_t nbytes)
 
 	return kWarpStatusOK;
 }
-
 
 
 void
@@ -382,7 +360,6 @@ warpEnableSPIpins(void)
 }
 
 
-
 void
 warpDisableSPIpins(void)
 {
@@ -409,7 +386,6 @@ warpDisableSPIpins(void)
 
 	CLOCK_SYS_DisableSpiClock(0);
 }
-
 
 
 void
@@ -460,7 +436,6 @@ warpDeasserAllSPIchipSelects(void)
 }
 
 
-
 void
 debugPrintSPIsinkBuffer(void)
 {
@@ -470,7 +445,6 @@ debugPrintSPIsinkBuffer(void)
 	}
 	warpPrint("\n");
 }
-
 
 
 void
@@ -491,7 +465,6 @@ warpEnableI2Cpins(void)
 }
 
 
-
 void
 warpDisableI2Cpins(void)
 {
@@ -508,7 +481,6 @@ warpDisableI2Cpins(void)
 
 	CLOCK_SYS_DisableI2cClock(0);
 }
-
 
 
 void
@@ -568,7 +540,10 @@ lowPowerPinStates(void)
     /*
      *	NOTE: The KL03 has no PTA10 or PTA11
      */
-    PORT_HAL_SetMuxMode(PORTA_BASE, 12, kPortPinDisabled);
+    /*
+     * Configure PTA12 for interrupt on falling edge
+     */
+    PORT_HAL_SetPinIntMode(PORTA_BASE, 12, kPortIntFallingEdge);
 
 
     /*
@@ -588,7 +563,6 @@ lowPowerPinStates(void)
 }
 
 
-
 void
 disableTPS62740(void)
 {
@@ -597,12 +571,13 @@ disableTPS62740(void)
 	#endif
 }
 
+
 void
 enableTPS62740(uint16_t voltageMillivolts)
 {
 	#if (!WARP_BUILD_ENABLE_GLAUX_VARIANT)
 		/*
-		 *	By default, assusme pins are currently disabled (e.g., by a recent lowPowerPinStates())
+		 *	By default, assumme pins are currently disabled (e.g., by a recent lowPowerPinStates())
 		 *
 		 *	Setup:
 		 *		PTB5/kWarpPinTPS62740_REGCTRL for GPIO
@@ -621,6 +596,7 @@ enableTPS62740(uint16_t voltageMillivolts)
 		GPIO_DRV_SetPinOutput(kWarpPinTPS62740_REGCTRL);
 	#endif
 }
+
 
 void
 setTPS62740CommonControlLines(uint16_t voltageMillivolts)
@@ -805,7 +781,6 @@ setTPS62740CommonControlLines(uint16_t voltageMillivolts)
 }
 
 
-
 void
 warpScaleSupplyVoltage(uint16_t voltageMillivolts)
 {
@@ -826,7 +801,6 @@ warpScaleSupplyVoltage(uint16_t voltageMillivolts)
 		}
 	#endif
 }
-
 
 
 void
@@ -871,54 +845,12 @@ warpLowPowerSecondsSleep(uint32_t sleepSeconds, bool forceAllPinsIntoLowPowerSta
 	}
 }
 
+
 uint16_t
 iterativeAvg(uint16_t prev_avg, uint16_t cur_elem, uint8_t n) {
     uint16_t  result;
     result = (((prev_avg * (n-1)) + cur_elem) / n );
     return result;
-}
-
-/*
-void
-printPinDirections(void)
-{
-	warpPrint("I2C0_SDA:%d\n", GPIO_DRV_GetPinDir(kWarpPinI2C0_SDA_UART_RX));
-	OSA_TimeDelay(100);
-	warpPrint("I2C0_SCL:%d\n", GPIO_DRV_GetPinDir(kWarpPinI2C0_SCL_UART_TX));
-	OSA_TimeDelay(100);
-	warpPrint("SPI_MOSI:%d\n", GPIO_DRV_GetPinDir(kWarpPinSPI_MOSI_UART_CTS));
-	OSA_TimeDelay(100);
-	warpPrint("SPI_MISO:%d\n", GPIO_DRV_GetPinDir(kWarpPinSPI_MISO_UART_RTS));
-	OSA_TimeDelay(100);
-	warpPrint("SPI_SCK_I2C_PULLUP_EN:%d\n", GPIO_DRV_GetPinDir(kWarpPinSPI_SCK_I2C_PULLUP_EN));
-	OSA_TimeDelay(100);
-	warpPrint("ADXL362_CS:%d\n", GPIO_DRV_GetPinDir(kWarpPinADXL362_CS));
-	OSA_TimeDelay(100);
-}
-*/
-
-
-
-void
-dumpProcessorState(void)
-{
-	uint32_t	cpuClockFrequency;
-
-	CLOCK_SYS_GetFreq(kCoreClock, &cpuClockFrequency);
-	warpPrint("\r\n\n\tCPU @ %u KHz\n", (cpuClockFrequency / 1000));
-	warpPrint("\r\tCPU power mode: %u\n", POWER_SYS_GetCurrentMode());
-	warpPrint("\r\tCPU clock manager configuration: %u\n", CLOCK_SYS_GetCurrentConfiguration());
-	warpPrint("\r\tRTC clock: %d\n", CLOCK_SYS_GetRtcGateCmd(0));
-	warpPrint("\r\tSPI clock: %d\n", CLOCK_SYS_GetSpiGateCmd(0));
-	warpPrint("\r\tI2C clock: %d\n", CLOCK_SYS_GetI2cGateCmd(0));
-	warpPrint("\r\tLPUART clock: %d\n", CLOCK_SYS_GetLpuartGateCmd(0));
-	warpPrint("\r\tPORT A clock: %d\n", CLOCK_SYS_GetPortGateCmd(0));
-	warpPrint("\r\tPORT B clock: %d\n", CLOCK_SYS_GetPortGateCmd(1));
-	warpPrint("\r\tFTF clock: %d\n", CLOCK_SYS_GetFtfGateCmd(0));
-	warpPrint("\r\tADC clock: %d\n", CLOCK_SYS_GetAdcGateCmd(0));
-	warpPrint("\r\tCMP clock: %d\n", CLOCK_SYS_GetCmpGateCmd(0));
-	warpPrint("\r\tVREF clock: %d\n", CLOCK_SYS_GetVrefGateCmd(0));
-	warpPrint("\r\tTPM clock: %d\n", CLOCK_SYS_GetTpmGateCmd(0));
 }
 
 
@@ -1039,11 +971,12 @@ warpPrint(const char *fmt, ...)
 	return;
 }
 
+
 int
 warpWaitKey(void)
 {
 	/*
-	 *	SEGGER'S implementation assumes the result of result of
+	 *	SEGGER'S implementation assumes the result of
 	 *	SEGGER_RTT_GetKey() is an int, so we play along.
 	 */
 	int		rttKey, bleChar = kWarpMiscMarkerForAbsentByte;
@@ -1116,6 +1049,15 @@ warpWaitKey(void)
 
 	return rttKey;
 }
+
+
+uint8_t dataReady = 0;
+//void PORTA_IRQHandler(void)
+//{
+    /* Clear interrupt flag.*/
+//    PORT_HAL_ClearPortIntFlag(PORTA_BASE);
+//    dataReady = 1;
+//}
 
 int
 main(void) {
@@ -1296,14 +1238,7 @@ main(void) {
     GPIO_DRV_Init(inputPins  /* input pins */, outputPins  /* output pins */);
     warpPrint("done.\n");
 
-    /*
-     *	Make sure the SWD pins, PTA0/1/2 SWD pins in their ALT3 state (i.e., as SWD).
-     *
-     *	See GitHub issue https://github.com/physical-computation/Warp-firmware/issues/54
-     */
-    PORT_HAL_SetMuxMode(PORTA_BASE, 0, kPortMuxAlt3);
-    PORT_HAL_SetMuxMode(PORTA_BASE, 1, kPortMuxAlt3);
-    PORT_HAL_SetMuxMode(PORTA_BASE, 2, kPortMuxAlt3);
+
 
     /*
      *	Note that it is lowPowerPinStates() that sets the pin mux mode,
@@ -1323,20 +1258,6 @@ main(void) {
     initL3GD20H(0x6B    /* i2cAddress */, kWarpDefaultSupplyVoltageMillivoltsL3GD20H);
     devSSD1331init(); /* Initialize SSD1331 OLED Display */
 
-    /*
-    draw0(2, 20, 6, 255, 255, 255);
-    draw1(7, 20, 6, 255, 255, 255);
-    draw2(17, 20, 6, 255, 255, 255);
-    draw3(27, 20, 6, 255, 255, 255);
-    draw4(37, 20, 6, 255, 255, 255);
-    draw5(47, 20, 6, 255, 255, 255);
-    draw6(57, 20, 6, 255, 255, 255);
-    draw7(67, 20, 6, 255, 255, 255);
-    draw8(77, 20, 6, 255, 255, 255);
-    draw9(87, 20, 6, 255, 255, 255);
-     */
-
-
     uint8_t linesL[8] = {0, 0, 0, 20, 0, 0, 10, 0};
     uint8_t linese[28] = {10, 0 , 3, 0, 3, 0, 0, 3, 0, 3, 0, 6, 0, 6, 3, 10, 3, 10, 7, 10, 7, 10, 10, 6, 10, 6, 0, 6};
     uint8_t linest[16] = {0, 20, 0, 3, 0, 3, 3, 0, 3, 0, 10, 0, 0, 10, 10, 10};
@@ -1354,7 +1275,7 @@ main(void) {
     drawChar(55, 50, 255, 255, 255, linesi, 2,2);
     drawChar(60, 50, 255, 255, 255, linesd, 4, 2);
     drawChar(73, 50, 255, 255, 255, linese, 7,2);
-    OSA_TimeDelay(5000);
+    OSA_TimeDelay(1000);
 
         /* Configuration value 0b000001000101:
             - 0-16V
@@ -1403,56 +1324,91 @@ main(void) {
     int16_t readingsMMA8451Q[3];
     int16_t readingsL3GD20H[3];
 
-    uint8_t statusRegisterValue;
-    int16_t zeroRateX, zeroRateY, zeroRateZ;
+    uint8_t statusRegisterValueGyro, statusRegisterValueAccel;
+    int16_t zeroRateGyroX, zeroRateGyroY, zeroRateGyroZ;
+    int16_t zeroRateAccelX, zeroRateAccelY, zeroRateAccelZ;
     int16_t xGyro, yGyro, zGyro, xAccel, yAccel, zAccel;
 
     int j = 0;
     while (j < 100) {
         readSensorRegisterL3GD20H(0x27, 1);
-        statusRegisterValue = deviceL3GD20HState.i2cBuffer[0];
+        statusRegisterValueGyro = deviceL3GD20HState.i2cBuffer[0];
         //warpPrint("Status register value: %d\n\n", statusRegisterValue);
-        if ((statusRegisterValue & 0b00001000) == 8) {
+        if ((statusRegisterValueGyro & 0b00001000) == 8) {
+
             returnSensorDataL3GD20H(readingsL3GD20H);
             if (j == 0) {
-                zeroRateX = readingsL3GD20H[j];
-                zeroRateY = readingsL3GD20H[j + 1];
-                zeroRateZ = readingsL3GD20H[j + 2];
-            } else {
-                zeroRateX = iterativeAvg(zeroRateX, readingsL3GD20H[0], j + 1);
-                zeroRateY = iterativeAvg(zeroRateX, readingsL3GD20H[1], j + 1);
-                zeroRateZ = iterativeAvg(zeroRateX, readingsL3GD20H[2], j + 1);
+                zeroRateGyroX = readingsL3GD20H[j];
+                zeroRateGyroY = readingsL3GD20H[j + 1];
+                zeroRateGyroZ = readingsL3GD20H[j + 2];
             }
-            j++;
+            else {
+                zeroRateGyroX = iterativeAvg(zeroRateGyroX, readingsL3GD20H[0], j + 1);
+                zeroRateGyroY = iterativeAvg(zeroRateGyroY, readingsL3GD20H[1], j + 1);
+                zeroRateGyroZ = iterativeAvg(zeroRateGyroZ, readingsL3GD20H[2], j + 1);
+            }
         }
+        j++;
     }
 
-    drawGlyph(10, 25, 10, 255, 255, 255, (zeroRateX / 10000) % 10);
-    drawGlyph(25, 25, 10, 255, 255, 255, (zeroRateX / 1000) % 10);
-    drawGlyph(40, 25, 10, 255, 255, 255, (zeroRateX / 100) % 10);
-    drawGlyph(55, 25, 10, 255, 255, 255, (zeroRateX / 10) % 10);
-    drawGlyph(70, 25, 10, 255, 255, 255, zeroRateX % 10);
-    OSA_TimeDelay(2000);
+    j = 0;
+    while (j < 100) {
+        readSensorRegisterMMA8451Q(0x00, 1);
+        statusRegisterValueAccel = deviceMMA8451QState.i2cBuffer[0];
+        //if ((statusRegisterValue & 0b00001000) == 8) {
+        if ((statusRegisterValueAccel & 0b00001000) == 8) {
+
+            returnSensorDataMMA8451Q(readingsMMA8451Q);
+            if (j == 0) {
+                zeroRateAccelX = readingsMMA8451Q[j];
+                zeroRateAccelY = readingsMMA8451Q[j + 1];
+                zeroRateAccelZ = readingsMMA8451Q[j + 2];
+            }
+            else {
+                zeroRateAccelX = iterativeAvg(zeroRateAccelX, readingsMMA8451Q[0], j + 1);
+                zeroRateAccelY = iterativeAvg(zeroRateAccelY, readingsMMA8451Q[1], j + 1);
+                zeroRateAccelZ = iterativeAvg(zeroRateAccelZ, readingsMMA8451Q[2], j + 1);
+            }
+        }
+        j++;
+    }
+
+    //drawGlyph(10, 25, 10, 255, 255, 255, (zeroRateX / 10000) % 10);
+    //drawGlyph(25, 25, 10, 255, 255, 255, (zeroRateX / 1000) % 10);
+    //drawGlyph(40, 25, 10, 255, 255, 255, (zeroRateX / 100) % 10);
+    //drawGlyph(55, 25, 10, 255, 255, 255, (zeroRateX / 10) % 10);
+    //drawGlyph(70, 25, 10, 255, 255, 255, zeroRateX % 10);
+    //OSA_TimeDelay(2000);
     clearScreen();
     warpPrint("xGyro, yGyro, zGyro, xAccel, yAccel, zAccel\n");
     while (1) {
-        returnSensorDataL3GD20H(readingsL3GD20H);
+
+        warpPrint("PRINT:");
+        printSensorDataL3GD20H(0);
+        printSensorDataMMA8451Q(0);
+        warpPrint("\n");
+
         readSensorRegisterL3GD20H(0x27, 1);
-        statusRegisterValue = deviceL3GD20HState.i2cBuffer[0];
-        if ((statusRegisterValue & 0b00001000) == 8) {
-            returnSensorDataL3GD20H(readingsL3GD20H);
-            xGyro = readingsL3GD20H[0];
-            yGyro = readingsL3GD20H[1];
-            zGyro = readingsL3GD20H[2];
-        }
+        statusRegisterValueGyro = deviceL3GD20HState.i2cBuffer[0];
+
         readSensorRegisterMMA8451Q(0x00, 1);
-        statusRegisterValue = deviceMMA8451QState.i2cBuffer[0];
-        if ((statusRegisterValue & 0b00001000) == 8) {
+        statusRegisterValueAccel = deviceMMA8451QState.i2cBuffer[0];
+
+        if (((statusRegisterValueGyro & 0b00001000) == 8)
+        && ((statusRegisterValueAccel & 0b00001000) == 8)) {
+
+            returnSensorDataL3GD20H(readingsL3GD20H);
+            xGyro = readingsL3GD20H[0] - zeroRateGyroX;
+            yGyro = readingsL3GD20H[1] - zeroRateGyroY;
+            zGyro = readingsL3GD20H[2] - zeroRateGyroZ;
+
             returnSensorDataMMA8451Q(readingsMMA8451Q);
             xAccel = readingsMMA8451Q[0];
             yAccel = readingsMMA8451Q[1];
             zAccel = readingsMMA8451Q[2];
+
         }
+        warpPrint("OTHER");
         warpPrint("%d, %d, %d, %d, %d, %d\n", xGyro, yGyro, zGyro, xAccel, yAccel, zAccel);
 
         uint8_t digits[6];
@@ -1469,7 +1425,7 @@ main(void) {
         //OSA_TimeDelay(1000);
 
 
-        warpPrint("%d, %d, %d, %d, %d, %d\n", xGyro, yGyro, zGyro, xAccel, yAccel, zAccel);
+        //warpPrint("%d, %d, %d, %d, %d, %d\n", xGyro, yGyro, zGyro, xAccel, yAccel, zAccel);
     }
 
 

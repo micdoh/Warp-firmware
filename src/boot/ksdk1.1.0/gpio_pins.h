@@ -56,7 +56,7 @@ enum _gpio_pins
 		kWarpPinAT45DB_SPI_nCS		= GPIO_MAKE_PIN(HW_GPIOA, 9),
 	#endif
 
-	kWarpPinISL23415_SPI_nCS		= GPIO_MAKE_PIN(HW_GPIOA, 12),
+	kWarpPinISL23415_SPI_nCS		= GPIO_MAKE_PIN(HW_GPIOB, 1),
 
 	#if (WARP_BUILD_ENABLE_GLAUX_VARIANT)
 		kGlauxPinLED			= GPIO_MAKE_PIN(HW_GPIOB, 0),
@@ -79,10 +79,10 @@ enum _gpio_pins
 	kWarpPinTPS62740_VSEL3			= GPIO_MAKE_PIN(HW_GPIOB, 7),
 	kWarpPinTPS62740_VSEL2			= GPIO_MAKE_PIN(HW_GPIOB, 10),
 	kWarpPinTPS62740_VSEL1			= GPIO_MAKE_PIN(HW_GPIOB, 11),
-	kWarpPinCLKOUT32K			= GPIO_MAKE_PIN(HW_GPIOB, 13),
+	kWarpPinCLKOUT32K			    = GPIO_MAKE_PIN(HW_GPIOB, 13),
 };
 
-extern gpio_input_pin_user_config_t	inputPins[];
+extern gpio_input_pin_user_config_t	    inputPins[];
 extern gpio_output_pin_user_config_t	outputPins[];
-extern gpio_input_pin_user_config_t	wakeupPins[];
+extern gpio_input_pin_user_config_t	    wakeupPins[];
 #endif /* __FSL_GPIO_PINS_H__ */

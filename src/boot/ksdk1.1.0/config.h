@@ -40,74 +40,12 @@
 #define		WARP_BUILD_BOOT_TO_VLPR				1
 #define		WARP_BUILD_DISABLE_SUPPLIES_BY_DEFAULT		0
 
-/*
- *	NOTE: The choice of WARP_BUILD_ENABLE_GLAUX_VARIANT is defined via the Makefile build rules.
- *	The commented line below should never be uncommented. It is just here to stress a point that
- *	you shouldn't try to enable the Glaux build in this way.
- */
-//#define		WARP_BUILD_ENABLE_GLAUX_VARIANT			0
-
-/*
- *	Define this here to activate FRDMKL03-specific behavior. Unlike the Glaux
- *	build variant above, we currently require users wanting to build for the
- *	KL03 to manually set this here.
- */
 #define		WARP_BUILD_ENABLE_FRDMKL03			1
 
-/*
- *	Force the required configuration if WARP_BUILD_ENABLE_GLAUX_VARIANT is set
- */
-#if (WARP_BUILD_ENABLE_GLAUX_VARIANT)
-	#define		WARP_BUILD_ENABLE_DEVADXL362		0
-	#define		WARP_BUILD_ENABLE_DEVAMG8834		0
-	#define		WARP_BUILD_ENABLE_DEVAS7262		0
-	#define		WARP_BUILD_ENABLE_DEVAS7263		0
-	#define		WARP_BUILD_ENABLE_DEVBGX		0
-	#define		WARP_BUILD_ENABLE_DEVBME680		1
-	#define		WARP_BUILD_ENABLE_DEVBMX055		0
-	#define		WARP_BUILD_ENABLE_DEVCCS811		0
-	#define		WARP_BUILD_ENABLE_DEVHDC1000		0
-	#define		WARP_BUILD_ENABLE_DEVIS25xP		0
-	#define		WARP_BUILD_ENABLE_DEVISL23415		0
-	#define		WARP_BUILD_ENABLE_DEVAT45DB		0
-	#define		WARP_BUILD_ENABLE_DEVICE40		0
-	#define		WARP_BUILD_ENABLE_DEVL3GD20H		0
-	#define		WARP_BUILD_ENABLE_DEVLPS25H		0
-	#define		WARP_BUILD_ENABLE_DEVMAG3110		0
-	#define		WARP_BUILD_ENABLE_DEVMMA8451Q		0
-	#define		WARP_BUILD_ENABLE_DEVRV8803C7		1
-	#define		WARP_BUILD_ENABLE_DEVSI4705		0
-	#define		WARP_BUILD_ENABLE_DEVSI7021		0
-	#define		WARP_BUILD_ENABLE_DEVTCS34725		0
-#elif (WARP_BUILD_ENABLE_FRDMKL03)
-	#define		WARP_BUILD_ENABLE_DEVL3GD20H		1
-	#define		WARP_BUILD_ENABLE_DEVMMA8451Q		1
-#else
-	/*
-	 *	Otherwise: Edit these to set which code paths are activated in the firmware compilation
-	 */
-	#define		WARP_BUILD_ENABLE_DEVADXL362		1
-	#define		WARP_BUILD_ENABLE_DEVAMG8834		0
-	#define		WARP_BUILD_ENABLE_DEVAS7262		0
-	#define		WARP_BUILD_ENABLE_DEVAS7263		0
-	#define		WARP_BUILD_ENABLE_DEVBGX		1
-	#define		WARP_BUILD_ENABLE_DEVBME680		0
-	#define		WARP_BUILD_ENABLE_DEVBMX055		0
-	#define		WARP_BUILD_ENABLE_DEVCCS811		0
-	#define		WARP_BUILD_ENABLE_DEVHDC1000		0
-	#define		WARP_BUILD_ENABLE_DEVIS25xP		0
-	#define		WARP_BUILD_ENABLE_DEVISL23415		0
-	#define		WARP_BUILD_ENABLE_DEVAT45DB		1
-	#define		WARP_BUILD_ENABLE_DEVICE40		0
-	#define		WARP_BUILD_ENABLE_DEVL3GD20H		0
-	#define		WARP_BUILD_ENABLE_DEVLPS25H		0
-	#define		WARP_BUILD_ENABLE_DEVMAG3110		0
-	#define		WARP_BUILD_ENABLE_DEVMMA8451Q		0
-	#define		WARP_BUILD_ENABLE_DEVRV8803C7		0
-	#define		WARP_BUILD_ENABLE_DEVSI4705		0
-	#define		WARP_BUILD_ENABLE_DEVSI7021		0
-	#define		WARP_BUILD_ENABLE_DEVTCS34725		0
-#endif
+
+#define		WARP_BUILD_ENABLE_DEVL3GD20H		1
+#define		WARP_BUILD_ENABLE_DEVMMA8451Q		1
+
 
 typedef enum
 {
@@ -140,17 +78,17 @@ typedef enum
 	/*
 	 *	Voltages
 	 */
-	kWarpDefaultSupplyVoltageMillivolts			= 1800,
-	kWarpDefaultSupplyVoltageMillivoltsMMA8451Q		= 1800,
-	kWarpDefaultSupplyVoltageMillivoltsL3GD20H		= 1800,
+	kWarpDefaultSupplyVoltageMillivolts			= 3300,
+	kWarpDefaultSupplyVoltageMillivoltsMMA8451Q		= 3300,
+	kWarpDefaultSupplyVoltageMillivoltsL3GD20H		= 3300,
 
     /*
      *  Configuration registers
      */
-    kWarpRegisterCTRL1ValueL3GD20H = 0b11111111,  // ODR 800Hz, No cut-off, see table 21, normal mode, x,y,z enable
+    kWarpRegisterCTRL1ValueL3GD20H = 0b11111111,  // ODR 800Hz, 100Hz cut-off, see table 21, normal mode, x,y,z enable
     kWarpRegisterCTRL2ValueL3GD20H = 0b00100000,
     kWarpRegisterCTRL5ValueL3GD20H = 0b00000000,  // normal mode, disable FIFO, disable high pass filter
-    kWarpRegisterF_SETUPValueMMA8451Q = 0x00,   // Disable FIFO
+    kWarpRegisterF_SETUPValueMMA8451Q = 0b00000000,   // Enable FIFO, 32 sample watermark
     kWarpRegisterCTRL_REG1ValueMMA8451Q = 0x05,   // Normal read 8bit, 800Hz, low noise (limited to +/-4g), active mode
     kWarpRegisterXYZ_DATA_CFGValueMMA8451Q = 0x01,  // No high-pass filter, +/-4g range
 
