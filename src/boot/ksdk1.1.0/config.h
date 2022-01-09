@@ -71,7 +71,7 @@ typedef enum
 	*/
 	kWarpDefaultPrintBufferSizeBytes			= 64,
 	kWarpMemoryCommonSpiBufferBytes				= 64,
-	kWarpSizesI2cBufferBytes				= 6,
+	kWarpSizesI2cBufferBytes				= 192,
 	kWarpSizesSpiBufferBytes				= 7,
 	kWarpSizesUartBufferBytes				= 8,
 
@@ -88,7 +88,7 @@ typedef enum
     kWarpRegisterCTRL1ValueL3GD20H = 0b11111111,  // ODR 800Hz, 100Hz cut-off, see table 21, normal mode, x,y,z enable
     kWarpRegisterCTRL2ValueL3GD20H = 0b00100000,
     kWarpRegisterCTRL5ValueL3GD20H = 0b00000000,  // normal mode, disable FIFO, disable high pass filter
-    kWarpRegisterF_SETUPValueMMA8451Q = 0b00000000,   // Enable FIFO, 32 sample watermark
+    kWarpRegisterF_SETUPValueMMA8451Q = 0b01000000,   // Enable FIFO, 32 sample watermark
     kWarpRegisterCTRL_REG1ValueMMA8451Q = 0x05,   // Normal read 8bit, 800Hz, low noise (limited to +/-4g), active mode
     kWarpRegisterXYZ_DATA_CFGValueMMA8451Q = 0x01,  // No high-pass filter, +/-4g range
 

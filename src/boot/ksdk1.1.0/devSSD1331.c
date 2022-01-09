@@ -262,11 +262,12 @@ draw0(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, u
 
 int
 draw1(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
-    uint8_t commands[22] = {
+    uint8_t commands[33] = {
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol+scale-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
             kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0
     };
-    writeMultipleCommand(commands, 22);
+    writeMultipleCommand(commands, 33);
     return 0;
 }
 

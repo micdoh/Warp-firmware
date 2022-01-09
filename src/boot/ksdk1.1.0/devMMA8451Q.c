@@ -62,9 +62,6 @@ extern volatile uint32_t		gWarpI2cBaudRateKbps;
 extern volatile uint32_t		gWarpI2cTimeoutMilliseconds;
 extern volatile uint32_t		gWarpSupplySettlingDelayMilliseconds;
 
-uint8_t         ACTIVE_MASK = 0b00000001;
-uint8_t         CTRL_REG1 = 0x2A;
-
 
 void
 initMMA8451Q(const uint8_t i2cAddress, uint16_t operatingVoltageMillivolts)
@@ -137,7 +134,7 @@ configureSensorMMA8451Q(uint8_t payloadF_SETUP, uint8_t payloadCTRL_REG1, uint8_
 	warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
 
     // Reset registers to defaults to begin
-    writeSensorRegisterMMA8451Q(kWarpSensorConfigurationRegisterMMA8451QCTRL_REG2 /* register address F_SETUP */,
+    writeSensorRegisterMMA8451Q(kWarpSensorConfigurationRegisterMMA8451QCTRL_REG2 /* register address CTRL_REG2 */,
                                 0x40
     );
 
@@ -325,7 +322,6 @@ returnSensorDataMMA8451Q(int16_t * readings)
     uint16_t	    readSensorRegisterValueLSB;
     uint16_t	    readSensorRegisterValueMSB;
     int16_t		    readSensorRegisterValueCombined;
-    int16_t         scaleFactor;
     WarpStatus	    i2cReadStatus;
     int             i;
     int             j = 0;
@@ -338,7 +334,7 @@ returnSensorDataMMA8451Q(int16_t * readings)
     {
         warpPrint(" MMA8451Q read failed,");
     }
-    for ( i = 0; i < 6; i+=2) {
+    for (i = 0; i < 6; i+=2) {
         readSensorRegisterValueMSB = deviceMMA8451QState.i2cBuffer[i];
         readSensorRegisterValueLSB = deviceMMA8451QState.i2cBuffer[i+1];
         readSensorRegisterValueCombined = ((readSensorRegisterValueMSB & 0xFF) << 6) | (readSensorRegisterValueLSB >> 2);
@@ -351,33 +347,39 @@ returnSensorDataMMA8451Q(int16_t * readings)
     return 0;
 }
 
+
 int
-returnSensorDataMMA8451QFIFO(int16_t * readings, uint8_t nBytes)
+returnSensorDataMMA8451QFIFO(int16_t * readings)
 {
     uint16_t	    readSensorRegisterValueLSB;
     uint16_t	    readSensorRegisterValueMSB;
     int16_t		    readSensorRegisterValueCombined;
     WarpStatus	    i2cReadStatus;
     int             i;
+    int             j = 0;
+    uint8_t         nBytes = 192;
 
     warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
 
     i2cReadStatus = readSensorRegisterMMA8451Q(kWarpSensorOutputRegisterMMA8451QOUT_X_MSB, nBytes /* numberOfBytes */);
+
     if (i2cReadStatus != kWarpStatusOK)
     {
         warpPrint(" MMA8451Q read failed,");
     }
-    for ( i = 0; i < nBytes/2; i+=2) {
+    for (i = 0; i < nBytes/2; i+=2) {
         readSensorRegisterValueMSB = deviceMMA8451QState.i2cBuffer[i];
         readSensorRegisterValueLSB = deviceMMA8451QState.i2cBuffer[i+1];
         readSensorRegisterValueCombined = ((readSensorRegisterValueMSB & 0xFF) << 6) | (readSensorRegisterValueLSB >> 2);
         //	Sign extend the 14-bit value based on knowledge that upper 2 bit are 0:
-        readSensorRegisterValueCombined = ((readSensorRegisterValueCombined ^ (1 << 13)) - (1 << 13));
-        readings[i] = readSensorRegisterValueCombined;
+        readSensorRegisterValueCombined = (readSensorRegisterValueCombined ^ (1 << 13)) - (1 << 13);
+        readings[j] = readSensorRegisterValueCombined;
+        j++;
     }
 
     return 0;
 }
+
 
 
 int
@@ -390,7 +392,11 @@ convertFromRawMMA8451Q(int16_t raw, uint8_t * digits) {
 
     if (raw < 0) {
         sign = 1;  // Indicates negative number
+        raw &= 0xFFFC;
+        raw = (~raw) + 1;
+        //raw = raw << 1;
     }
+    uint8_t MSB = (raw >> 8) & 0xFF;
     //#if ((/*kWarpRegisterXYZ_DATA_CFGValueMMA8451Q*/0x01 & 0b00000011) == 0) // +/- 2g range
     //    warpPrint("2g range\n");
     //    digit = (raw & 0x4000) >> 14;
@@ -398,7 +404,8 @@ convertFromRawMMA8451Q(int16_t raw, uint8_t * digits) {
     //#endif
     //#if ((kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011) == 1) // +/- 4g
         //warpPrint("4g range\n");
-        digit = (raw & 0x6000) >> 13;
+        raw = raw << 1;
+        digit = (raw & 0x7000) >> 13;
         raw = raw << 3;
     //#endif
     //#if ((kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011) == 2) // +/- 8g range
@@ -406,12 +413,12 @@ convertFromRawMMA8451Q(int16_t raw, uint8_t * digits) {
     //    digit = (raw & 0x7000) >> 12;
     //    raw = raw << 4;
     //#endif
-    for (i = 0; i < 16; i++) {
+    for (i = 0; i < 12; i++) {
         if ((raw & 0x8000) == 0x8000) {
             fracDigits += frac;
-            frac = frac / 2;
-            raw = raw << 1;
         }
+        frac = (frac+1) / 2;
+        raw = raw << 1;
     }
 
     digits[0] = sign;

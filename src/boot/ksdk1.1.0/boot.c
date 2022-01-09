@@ -52,7 +52,7 @@
 #include "fsl_power_manager.h"
 #include "fsl_mcglite_hal.h"
 #include "fsl_port_hal.h"
-#include "fsl_lpuart_driver.h"
+//#include "fsl_lpuart_driver.h"
 #include "warp.h"
 #include "errstrs.h"
 #include "gpio_pins.h"
@@ -72,18 +72,18 @@ volatile WarpI2CDeviceState		deviceMMA8451QState;
 volatile i2c_master_state_t			i2cMasterState;
 volatile spi_master_state_t			spiMasterState;
 volatile spi_master_user_config_t	spiUserConfig;
-volatile lpuart_user_config_t		lpuartUserConfig;
-volatile lpuart_state_t				lpuartState;
+//volatile lpuart_user_config_t		lpuartUserConfig;
+//volatile lpuart_state_t				lpuartState;
 
 volatile bool						gWarpBooted				                = false;
 volatile uint32_t					gWarpI2cBaudRateKbps			        = kWarpDefaultI2cBaudRateKbps;
-volatile uint32_t					gWarpUartBaudRateBps			        = kWarpDefaultUartBaudRateBps;
+//volatile uint32_t					gWarpUartBaudRateBps			        = kWarpDefaultUartBaudRateBps;
 volatile uint32_t					gWarpSpiBaudRateKbps			        = kWarpDefaultSpiBaudRateKbps;
 volatile uint32_t					gWarpSleeptimeSeconds			        = kWarpDefaultSleeptimeSeconds;
 volatile WarpModeMask				gWarpMode				                = kWarpModeDisableAdcOnSleep;
 volatile uint32_t					gWarpI2cTimeoutMilliseconds		        = kWarpDefaultI2cTimeoutMilliseconds;
 volatile uint32_t					gWarpSpiTimeoutMicroseconds		        = kWarpDefaultSpiTimeoutMicroseconds;
-volatile uint32_t					gWarpUartTimeoutMilliseconds		    = kWarpDefaultUartTimeoutMilliseconds;
+//volatile uint32_t					gWarpUartTimeoutMilliseconds		    = kWarpDefaultUartTimeoutMilliseconds;
 volatile uint32_t					gWarpMenuPrintDelayMilliseconds		    = kWarpDefaultMenuPrintDelayMilliseconds;
 volatile uint32_t					gWarpSupplySettlingDelayMilliseconds	= kWarpDefaultSupplySettlingDelayMilliseconds;
 volatile uint16_t					gWarpCurrentSupplyVoltage		        = kWarpDefaultSupplyVoltageMillivolts;
@@ -93,6 +93,7 @@ uint8_t							    gWarpSpiCommonSinkBuffer[kWarpMemoryCommonSpiBufferBytes];
 
 
 int16_t readingsMMA8451Q[3];
+int16_t readingsMMA8451QFIFO[32];
 int16_t readingsL3GD20H[3];
 uint8_t statusRegisterValueGyro, statusRegisterValueAccel;
 int16_t zeroRateGyroX = 0, zeroRateGyroY = 0, zeroRateGyroZ = 0;
@@ -107,7 +108,6 @@ static void						lowPowerPinStates(void);
 static void						disableTPS62740(void);
 static void						enableTPS62740(uint16_t voltageMillivolts);
 static void						setTPS62740CommonControlLines(uint16_t voltageMillivolts);
-static void						dumpProcessorState(void);
 uint16_t                        avg(uint16_t *, uint8_t length);
 uint16_t                        iterativeAvg(uint16_t prev_avg, uint16_t cur_elem, uint8_t n);
 WarpStatus						writeByteToI2cDeviceRegister(uint8_t i2cAddress, bool sendCommandByte, uint8_t commandByte, bool sendPayloadByte, uint8_t payloadByte);
@@ -243,87 +243,8 @@ callback0(power_manager_notify_struct_t *  notify, power_manager_callback_data_t
 
 
 
-void
-enableLPUARTpins(void)
-{
-	/*
-	 *	Enable UART CLOCK
-	 */
-	CLOCK_SYS_EnableLpuartClock(0);
 
-	/*
-	 *	Set UART pin association. See, e.g., page 99 in
-	 *
-	 *		https://www.nxp.com/docs/en/reference-manual/KL03P24M48SF0RM.pdf
-	 *
-	 *	Setup:
-	 *		PTB3/kWarpPinI2C0_SCL_UART_TX for UART TX
-	 *		PTB4/kWarpPinI2C0_SCL_UART_RX for UART RX
-
-//TODO: we don't use hw flow control so don't need RTS/CTS
- *		PTA6/kWarpPinSPI_MISO_UART_RTS for UART RTS
- *		PTA7/kWarpPinSPI_MOSI_UART_CTS for UART CTS
-	 */
-	PORT_HAL_SetMuxMode(PORTB_BASE, 3, kPortMuxAlt3);
-	PORT_HAL_SetMuxMode(PORTB_BASE, 4, kPortMuxAlt3);
-
-//TODO: we don't use hw flow control so don't need RTS/CTS
-//	PORT_HAL_SetMuxMode(PORTA_BASE, 6, kPortMuxAsGpio);
-//	PORT_HAL_SetMuxMode(PORTA_BASE, 7, kPortMuxAsGpio);
-//	GPIO_DRV_SetPinOutput(kWarpPinSPI_MISO_UART_RTS);
-//	GPIO_DRV_SetPinOutput(kWarpPinSPI_MOSI_UART_CTS);
-
-	/*
-	 *	Initialize LPUART0. See KSDK13APIRM.pdf section 40.4.3, page 1353
-	 */
-	lpuartUserConfig.baudRate = gWarpUartBaudRateBps;
-	lpuartUserConfig.parityMode = kLpuartParityDisabled;
-	lpuartUserConfig.stopBitCount = kLpuartOneStopBit;
-	lpuartUserConfig.bitCountPerChar = kLpuart8BitsPerChar;
-	lpuartUserConfig.clockSource = kClockLpuartSrcMcgIrClk;
-
-	LPUART_DRV_Init(0,(lpuart_state_t *)&lpuartState,(lpuart_user_config_t *)&lpuartUserConfig);
-}
-
-
-void
-disableLPUARTpins(void)
-{
-	/*
-	 *	LPUART deinit
-	 */
-	LPUART_DRV_Deinit(0);
-
-	/*
-	 *	Set UART pin association. See, e.g., page 99 in
-	 *
-	 *		https://www.nxp.com/docs/en/reference-manual/KL03P24M48SF0RM.pdf
-	 *
-	 *	Setup:
-	 *		PTB3/kWarpPinI2C0_SCL_UART_TX for UART TX
-	 *		PTB4/kWarpPinI2C0_SCL_UART_RX for UART RX
-
-//TODO: we don't use the HW flow control and that messes with the SPI any way
- *		PTA6/kWarpPinSPI_MISO_UART_RTS for UART RTS
- *		PTA7/kWarpPinSPI_MOSI_UART_CTS for UART CTS
-	 */
-	PORT_HAL_SetMuxMode(PORTB_BASE, 3, kPortPinDisabled);
-	PORT_HAL_SetMuxMode(PORTB_BASE, 4, kPortPinDisabled);
-
-//TODO: we don't use flow-control
-	PORT_HAL_SetMuxMode(PORTA_BASE, 6, kPortMuxAsGpio);
-	PORT_HAL_SetMuxMode(PORTA_BASE, 7, kPortMuxAsGpio);
-
-	GPIO_DRV_ClearPinOutput(kWarpPinSPI_MISO_UART_RTS);
-	GPIO_DRV_ClearPinOutput(kWarpPinSPI_MOSI_UART_CTS);
-
-	/*
-	 *	Disable LPUART CLOCK
-	*/
-	CLOCK_SYS_DisableLpuartClock(0);
-}
-
-
+/*
 WarpStatus
 sendBytesToUART(uint8_t *  bytes, size_t nbytes)
 {
@@ -337,7 +258,7 @@ sendBytesToUART(uint8_t *  bytes, size_t nbytes)
 
 	return kWarpStatusOK;
 }
-
+*/
 
 void
 warpEnableSPIpins(void)
@@ -396,54 +317,6 @@ warpDisableSPIpins(void)
 	GPIO_DRV_ClearPinOutput(kWarpPinSPI_SCK);
 
 	CLOCK_SYS_DisableSpiClock(0);
-}
-
-
-void
-warpDeasserAllSPIchipSelects(void)
-{
-	/*
-	 *	By default, assusme pins are currently disabled (e.g., by a recent lowPowerPinStates())
-	 *
-	 *	Drive all chip selects high to disable them. Individual drivers call this routine before
-	 *	appropriately asserting their respective chip selects.
-	 *
-	 *	Setup:
-	 *		PTA12/kWarpPinISL23415_SPI_nCS	for GPIO
-	 *		PTA9/kWarpPinAT45DB_SPI_nCS	for GPIO
-	 *		PTA8/kWarpPinADXL362_SPI_nCS	for GPIO
-	 *		PTB1/kWarpPinFPGA_nCS		for GPIO
-	 *
-	 *		On Glaux
-	 		PTB2/kGlauxPinFlash_SPI_nCS for GPIO
-	 */
-	PORT_HAL_SetMuxMode(PORTA_BASE, 12, kPortMuxAsGpio);
-	PORT_HAL_SetMuxMode(PORTA_BASE, 9, kPortMuxAsGpio);
-	PORT_HAL_SetMuxMode(PORTA_BASE, 8, kPortMuxAsGpio);
-	PORT_HAL_SetMuxMode(PORTB_BASE, 1, kPortMuxAsGpio);
-	#if (WARP_BUILD_ENABLE_GLAUX_VARIANT)
-		PORT_HAL_SetMuxMode(PORTB_BASE, 2, kPortMuxAsGpio);
-	#endif
-
-	#if (WARP_BUILD_ENABLE_DEVISL23415)
-		GPIO_DRV_SetPinOutput(kWarpPinISL23415_SPI_nCS);
-	#endif
-
-	#if (WARP_BUILD_ENABLE_DEVAT45DB)
-		GPIO_DRV_SetPinOutput(kWarpPinAT45DB_SPI_nCS);
-	#endif
-
-	#if (WARP_BUILD_ENABLE_DEVADXL362)
-		GPIO_DRV_SetPinOutput(kWarpPinADXL362_SPI_nCS);
-	#endif
-
-	#if (WARP_BUILD_ENABLE_DEVICE40)
-		GPIO_DRV_SetPinOutput(kWarpPinFPGA_nCS);
-	#endif
-
-	#if (WARP_BUILD_ENABLE_GLAUX_VARIANT)
-		GPIO_DRV_SetPinOutput(kGlauxPinFlash_SPI_nCS);
-	#endif
 }
 
 
@@ -896,56 +769,9 @@ warpPrint(const char *fmt, ...)
 		{
 			SEGGER_RTT_WriteString(0, gWarpEfmt);
 
-			#if (WARP_BUILD_ENABLE_DEVBGX)
-				if (gWarpBooted)
-				{
-					WarpStatus	status;
-
-					enableLPUARTpins();
-					initBGX(kWarpDefaultSupplyVoltageMillivoltsBGX);
-					status = sendBytesToUART((uint8_t *)gWarpEfmt, strlen(gWarpEfmt)+1);
-					if (status != kWarpStatusOK)
-					{
-						SEGGER_RTT_WriteString(0, gWarpEuartSendChars);
-					}
-					disableLPUARTpins();
-
-					/*
-					 *	We don't want to deInit() the BGX since that would drop
-					 *	any remote terminal connected to it.
-					 */
-					//deinitBGX();
-				}
-			#endif
-
 			return;
 		}
 
-		/*
-		 *	If WARP_BUILD_ENABLE_DEVBGX, also send the fmt to the UART / BLE.
-		 */
-		#if (WARP_BUILD_ENABLE_DEVBGX)
-			if (gWarpBooted)
-			{
-				WarpStatus	status;
-
-				enableLPUARTpins();
-				initBGX(kWarpDefaultSupplyVoltageMillivoltsBGX);
-
-				status = sendBytesToUART((uint8_t *)gWarpPrintBuffer, max(fmtlen, kWarpDefaultPrintBufferSizeBytes));
-				if (status != kWarpStatusOK)
-				{
-					SEGGER_RTT_WriteString(0, gWarpEuartSendChars);
-				}
-				disableLPUARTpins();
-
-				/*
-				 *	We don't want to deInit() the BGX since that would drop
-				 *	any remote terminal connected to it.
-				 */
-				//deinitBGX();
-			}
-		#endif
 	#else
 		/*
 		 *	If we are not compiling in the SEGGER_RTT_printf,
@@ -953,30 +779,7 @@ warpPrint(const char *fmt, ...)
 		 */
 		SEGGER_RTT_WriteString(0, fmt);
 
-		/*
-		 *	If WARP_BUILD_ENABLE_DEVBGX, also send the fmt to the UART / BLE.
-		 */
-		#if (WARP_BUILD_ENABLE_DEVBGX)
-			if (gWarpBooted)
-			{
-				WarpStatus	status;
 
-				enableLPUARTpins();
-				initBGX(kWarpDefaultSupplyVoltageMillivoltsBGX);
-				status = sendBytesToUART(fmt, strlen(fmt));
-				if (status != kWarpStatusOK)
-				{
-					SEGGER_RTT_WriteString(0, gWarpEuartSendChars);
-				}
-				disableLPUARTpins();
-
-				/*
-				 *	We don't want to deInit() the BGX since that would drop
-				 *	any remote terminal connected to it.
-				 */
-				//deinitBGX();
-			}
-		#endif
 	#endif
 
 	return;
@@ -999,19 +802,10 @@ warpWaitKey(void)
 	 *	The check below on rttKey is exactly what SEGGER_RTT_WaitKey()
 	 *	does in SEGGER_RTT.c.
 	 */
-	#if (WARP_BUILD_ENABLE_DEVBGX)
-		deviceBGXState.uartRXBuffer[0] = kWarpMiscMarkerForAbsentByte;
-		enableLPUARTpins();
-		initBGX(kWarpDefaultSupplyVoltageMillivoltsBGX);
-	#endif
 
 	do
 	{
 		rttKey	= SEGGER_RTT_GetKey();
-
-		#if (WARP_BUILD_ENABLE_DEVBGX)
-			bleChar	= deviceBGXState.uartRXBuffer[0];
-		#endif
 
 		/*
 		 *	NOTE: We ignore all chars on BLE except '0'-'9', 'a'-'z'/'A'-Z'
@@ -1022,53 +816,19 @@ warpWaitKey(void)
 		}
 	} while ((rttKey < 0) && (bleChar == kWarpMiscMarkerForAbsentByte));
 
-	#if (WARP_BUILD_ENABLE_DEVBGX)
-		if (bleChar != kWarpMiscMarkerForAbsentByte)
-		{
-			/*
-			 *	Send a copy of incoming BLE chars to RTT
-			 */
-			SEGGER_RTT_PutChar(0, bleChar);
-			disableLPUARTpins();
-
-			/*
-			 *	We don't want to deInit() the BGX since that would drop
-			 *	any remote terminal connected to it.
-			 */
-			//deinitBGX();
-
-			return (int)bleChar;
-		}
-
-		/*
-		 *	Send a copy of incoming RTT chars to BLE
-		 */
-		WarpStatus status = sendBytesToUART((uint8_t *)&rttKey, 1);
-		if (status != kWarpStatusOK)
-		{
-			SEGGER_RTT_WriteString(0, gWarpEuartSendChars);
-		}
-
-		disableLPUARTpins();
-
-		/*
-		 *	We don't want to deInit() the BGX since that would drop
-		 *	any remote terminal connected to it.
-		 */
-		//deinitBGX();
-	#endif
 
 	return rttKey;
 }
 
-
+/*
 uint8_t dataReady = 0;
-//void PORTA_IRQHandler(void)
-//{
-    /* Clear interrupt flag.*/
-//    PORT_HAL_ClearPortIntFlag(PORTA_BASE);
-//    dataReady = 1;
-//}
+void PORTA_IRQHandler(void)
+{
+    readSensorRegisterMMA8451Q(0x00, 1); // Clear interrupt flag
+    PORT_HAL_ClearPortIntFlag(PORTA_BASE); // Lower interrupt pin
+    dataReady = 1;
+}
+ */
 
 int
 main(void) {
@@ -1286,7 +1046,6 @@ main(void) {
     drawChar(55, 50, 255, 255, 255, linesi, 2,2);
     drawChar(60, 50, 255, 255, 255, linesd, 4, 2);
     drawChar(73, 50, 255, 255, 255, linese, 7,2);
-    OSA_TimeDelay(1000);
 
         /* Configuration value 0b000001000101:
             - 0-16V
@@ -1330,16 +1089,16 @@ main(void) {
     convertFromRawMMA8451Q(test, digits);
     warpPrint("Test digits: %d %d %d %d %d %d\n", digits[0], digits[1], digits[2], digits[3], digits[4], digits[5]);
     */
-
-    clearScreen();
     /*
-    int16_t readingsMMA8451Q[3];//[3];
-    int16_t readingsL3GD20H[3];
-    uint8_t statusRegisterValueGyro, statusRegisterValueAccel;
-
-    int16_t zeroRateGyroX, zeroRateGyroY, zeroRateGyroZ;
-    int16_t zeroRateAccelX, zeroRateAccelY, zeroRateAccelZ;
-    */
+     *             warpPrint("I2C Buffer post-read: %d, %d, %d, %d, %d, %d\n",
+                      deviceMMA8451QState.i2cBuffer[0],
+                      deviceMMA8451QState.i2cBuffer[1],
+                      deviceMMA8451QState.i2cBuffer[2],
+                      deviceMMA8451QState.i2cBuffer[3],
+                      deviceMMA8451QState.i2cBuffer[4],
+                      deviceMMA8451QState.i2cBuffer[5]);
+     */
+/*
     j = 0;
     while (j < 100) {
         readSensorRegisterL3GD20H(0x27, 1);
@@ -1352,41 +1111,32 @@ main(void) {
             j++;
         }
     }
+    */
 
     j = 0;
     while (j < 100) {
         readSensorRegisterMMA8451Q(0x00, 1);
         statusRegisterValueAccel = deviceMMA8451QState.i2cBuffer[0];
-        warpPrint("%d\n", statusRegisterValueAccel);
-        warpPrint("I2C Buffer: %d, %d, %d, %d, %d, %d\n",
-                  deviceMMA8451QState.i2cBuffer[0],
-                  deviceMMA8451QState.i2cBuffer[1],
-                  deviceMMA8451QState.i2cBuffer[2],
-                  deviceMMA8451QState.i2cBuffer[3],
-                  deviceMMA8451QState.i2cBuffer[4],
-                  deviceMMA8451QState.i2cBuffer[5]);
         if ((statusRegisterValueAccel & 0b00001000) == 8) {
             returnSensorDataMMA8451Q(readingsMMA8451Q);
-            warpPrint("I2C Buffer post-read: %d, %d, %d, %d, %d, %d\n",
-                      deviceMMA8451QState.i2cBuffer[0],
-                      deviceMMA8451QState.i2cBuffer[1],
-                      deviceMMA8451QState.i2cBuffer[2],
-                      deviceMMA8451QState.i2cBuffer[3],
-                      deviceMMA8451QState.i2cBuffer[4],
-                      deviceMMA8451QState.i2cBuffer[5]);
             zeroRateAccelX = iterativeAvg(zeroRateAccelX, readingsMMA8451Q[0], j + 1);
             zeroRateAccelY = iterativeAvg(zeroRateAccelY, readingsMMA8451Q[1], j + 1);
             zeroRateAccelZ = iterativeAvg(zeroRateAccelZ, readingsMMA8451Q[2], j + 1);
             j++;
             }
         }
+    int8_t X_OFFSET = (zeroRateAccelX/4) * -1;
+    int8_t Y_OFFSET = (zeroRateAccelY/4) * -1;
+    int8_t Z_OFFSET = ((4096-zeroRateAccelZ)/4) * -1;
+    warpPrint("OFFSETS: %d, %d, %d", X_OFFSET, Y_OFFSET, Z_OFFSET);
+    writeSensorRegisterMMA8451Q(kWarpSensorConfigurationRegisterMMA8451QCTRL_REG1, 0x00); // Standby
+    writeSensorRegisterMMA8451Q(0x2F, X_OFFSET); // x_OFFSET
+    writeSensorRegisterMMA8451Q(0x30, Y_OFFSET); // Y_OFFSET
+    writeSensorRegisterMMA8451Q(0x31, Z_OFFSET); // Z_OFFSET
+    writeSensorRegisterMMA8451Q(kWarpSensorConfigurationRegisterMMA8451QCTRL_REG1, kWarpRegisterCTRL_REG1ValueMMA8451Q); // Active
 
-    //drawGlyph(10, 25, 10, 255, 255, 255, (zeroRateX / 10000) % 10);
-    //drawGlyph(25, 25, 10, 255, 255, 255, (zeroRateX / 1000) % 10);
-    //drawGlyph(40, 25, 10, 255, 255, 255, (zeroRateX / 100) % 10);
-    //drawGlyph(55, 25, 10, 255, 255, 255, (zeroRateX / 10) % 10);
-    //drawGlyph(70, 25, 10, 255, 255, 255, zeroRateX % 10);
-    //OSA_TimeDelay(2000);
+
+
     clearScreen();
 
     warpPrint("xGyro, yGyro, zGyro, xAccel, yAccel, zAccel\n");
@@ -1402,12 +1152,6 @@ main(void) {
             k += 3;
         }
         OSA_TimeDelay(1000);*/
-        /*
-        int16_t readingsMMA8451Q[3];//[3];
-        int16_t readingsL3GD20H[3];
-        uint8_t statusRegisterValueGyro, statusRegisterValueAccel;
-        int16_t xGyro, yGyro, zGyro, xAccel, yAccel, zAccel;
-*/
 
         //warpPrint("A:");
         //printSensorDataL3GD20H(0);
@@ -1415,42 +1159,49 @@ main(void) {
         //warpPrint("\n");
 
         readSensorRegisterL3GD20H(0x27, 1);
-        statusRegisterValueGyro = deviceL3GD20HState.i2cBuffer[-1];
+        statusRegisterValueGyro = deviceL3GD20HState.i2cBuffer[0];
 
         readSensorRegisterMMA8451Q(0x00, 1);
-        statusRegisterValueAccel = deviceMMA8451QState.i2cBuffer[-1];
+        statusRegisterValueAccel = deviceMMA8451QState.i2cBuffer[0];
 
+        warpPrint("regValues: %d %d\n", statusRegisterValueGyro, statusRegisterValueAccel);
+/*
         if (((statusRegisterValueGyro & 0b00001000) == 8)
         && ((statusRegisterValueAccel & 0b00001000) == 8)) {
-            warpPrint("success\n");
+
             returnSensorDataL3GD20H(readingsL3GD20H);
-            xGyro = readingsL3GD20H[0] - zeroRateGyroX;
-            yGyro = readingsL3GD20H[1] - zeroRateGyroY;
-            zGyro = readingsL3GD20H[2] - zeroRateGyroZ;
+            xGyro = readingsL3GD20H[0];// - zeroRateGyroX;
+            yGyro = readingsL3GD20H[1];// - zeroRateGyroY;
+            zGyro = readingsL3GD20H[2];// - zeroRateGyroZ;
 
             returnSensorDataMMA8451Q(readingsMMA8451Q);
             xAccel = readingsMMA8451Q[0];
             yAccel = readingsMMA8451Q[1];
             zAccel = readingsMMA8451Q[2];
 
-            //warpPrint("B: ");
-            //warpPrint("%d, %d, %d\n", xAccel, yAccel, zAccel);
+        }
+*/
+        if ((statusRegisterValueAccel & 0b001111111) == 0b001111111) {
 
+            returnSensorDataMMA8451QFIFO(readingsMMA8451QFIFO, 192);
+            j=0;
+            for (i = 0; i <32; i++) {
+                warpPrint("%d\n", readingsMMA8451QFIFO[j]);
+                j+=3;
+            }
+            xAccel = readingsMMA8451Q[0];
+            yAccel = readingsMMA8451Q[1];
+            zAccel = readingsMMA8451Q[2];
         }
 
-        //returnSensorDataMMA8451Q(readingsMMA8451Q);
-        //xAccel = readingsMMA8451Q[0];
-        //yAccel = readingsMMA8451Q[1];
-        //zAccel = readingsMMA8451Q[2];
-
-        warpPrint("%d, %d, %d\n", xAccel, yAccel, zAccel);
-
         //warpPrint("%d, %d, %d, %d, %d, %d\n", xGyro, yGyro, zGyro, xAccel, yAccel, zAccel);
-
         uint8_t digits[6];
-        convertFromRawMMA8451Q(xAccel, digits);
+        convertFromRawMMA8451Q(zAccel, digits);
         if (digits[0] == 1) {
             drawMinus(2, 25, 8, 255, 255, 255);
+        }
+        else {
+            drawMinus(2, 25, 8, 0, 0, 0);
         }
         drawGlyph(20, 25, 8, 255, 255, 255, digits[1]);
         drawPoint(33, 25, 8, 255, 255, 255);
@@ -1458,10 +1209,8 @@ main(void) {
         drawGlyph(59, 25, 8, 255, 255, 255, digits[3]);
         drawGlyph(71, 25, 8, 255, 255, 255, digits[4]);
         drawGlyph(84, 25, 8, 255, 255, 255, digits[5]);
-        //OSA_TimeDelay(1000);
+        //OSA_TimeDelay(5000);
 
-
-        //warpPrint("%d, %d, %d, %d, %d, %d\n", xGyro, yGyro, zGyro, xAccel, yAccel, zAccel);
     }
 
 /*

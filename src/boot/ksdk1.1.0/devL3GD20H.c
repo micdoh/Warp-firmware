@@ -152,7 +152,7 @@ readSensorRegisterL3GD20H(uint8_t deviceRegister, int numberOfBytes)
 
 
 	USED(numberOfBytes);
-	if ((deviceRegister < 0x0F) || (deviceRegister > 0x39))
+	if ((deviceRegister < 0x0F) || ((0x0F < deviceRegister) && (deviceRegister < 0x20)))
 	{
 		return kWarpStatusBadDeviceCommand;
 	}
@@ -214,10 +214,12 @@ printSensorDataL3GD20H(bool hexModeFlag)
 
 	warpScaleSupplyVoltage(deviceL3GD20HState.operatingVoltageMillivolts);
 
-	i2cReadStatusLow = readSensorRegisterL3GD20H(kWarpSensorOutputRegisterL3GD20HOUT_X_L, 1 /* numberOfBytes */);
+    i2cReadStatusLow = readSensorRegisterL3GD20H((kWarpSensorOutputRegisterL3GD20HOUT_X_L | 0x80), 6 /* numberOfBytes */);
+    i2cReadStatusHigh = kWarpStatusOK;
+    //i2cReadStatusLow = readSensorRegisterL3GD20H(kWarpSensorOutputRegisterL3GD20HOUT_X_L, 1 /* numberOfBytes */);
 	readSensorRegisterValueLSB = deviceL3GD20HState.i2cBuffer[0];
-	i2cReadStatusHigh = readSensorRegisterL3GD20H(kWarpSensorOutputRegisterL3GD20HOUT_X_H, 1 /* numberOfBytes */);
-	readSensorRegisterValueMSB = deviceL3GD20HState.i2cBuffer[0];
+	//i2cReadStatusHigh = readSensorRegisterL3GD20H(kWarpSensorOutputRegisterL3GD20HOUT_X_H, 1 /* numberOfBytes */);
+	readSensorRegisterValueMSB = deviceL3GD20HState.i2cBuffer[1];
 	readSensorRegisterValueCombined = ((readSensorRegisterValueMSB & 0xFF) << 8) | (readSensorRegisterValueLSB & 0xFF);
 
 	/*
@@ -240,10 +242,10 @@ printSensorDataL3GD20H(bool hexModeFlag)
 		}
 	}
 
-	i2cReadStatusLow = readSensorRegisterL3GD20H(kWarpSensorOutputRegisterL3GD20HOUT_Y_L, 1 /* numberOfBytes */);
-	readSensorRegisterValueLSB = deviceL3GD20HState.i2cBuffer[0];
-	i2cReadStatusHigh = readSensorRegisterL3GD20H(kWarpSensorOutputRegisterL3GD20HOUT_Y_H, 1 /* numberOfBytes */);
-	readSensorRegisterValueMSB = deviceL3GD20HState.i2cBuffer[0];
+	//i2cReadStatusLow = readSensorRegisterL3GD20H(kWarpSensorOutputRegisterL3GD20HOUT_Y_L, 1 /* numberOfBytes */);
+	readSensorRegisterValueLSB = deviceL3GD20HState.i2cBuffer[2];
+	//i2cReadStatusHigh = readSensorRegisterL3GD20H(kWarpSensorOutputRegisterL3GD20HOUT_Y_H, 1 /* numberOfBytes */);
+	readSensorRegisterValueMSB = deviceL3GD20HState.i2cBuffer[3];
 	readSensorRegisterValueCombined = ((readSensorRegisterValueMSB & 0xFF) << 8) | (readSensorRegisterValueLSB & 0xFF);
 
 	/*
@@ -266,10 +268,10 @@ printSensorDataL3GD20H(bool hexModeFlag)
 		}
 	}
 
-	i2cReadStatusLow = readSensorRegisterL3GD20H(kWarpSensorOutputRegisterL3GD20HOUT_Z_L, 1 /* numberOfBytes */);
-	readSensorRegisterValueLSB = deviceL3GD20HState.i2cBuffer[0];
-	i2cReadStatusHigh = readSensorRegisterL3GD20H(kWarpSensorOutputRegisterL3GD20HOUT_Z_H, 1 /* numberOfBytes */);
-	readSensorRegisterValueMSB = deviceL3GD20HState.i2cBuffer[0];
+	//i2cReadStatusLow = readSensorRegisterL3GD20H(kWarpSensorOutputRegisterL3GD20HOUT_Z_L, 1 /* numberOfBytes */);
+	readSensorRegisterValueLSB = deviceL3GD20HState.i2cBuffer[4];
+	//i2cReadStatusHigh = readSensorRegisterL3GD20H(kWarpSensorOutputRegisterL3GD20HOUT_Z_H, 1 /* numberOfBytes */);
+	readSensorRegisterValueMSB = deviceL3GD20HState.i2cBuffer[5];
 	readSensorRegisterValueCombined = ((readSensorRegisterValueMSB & 0xFF) << 8) | (readSensorRegisterValueLSB & 0xFF);
 
 	/*
@@ -317,19 +319,21 @@ printSensorDataL3GD20H(bool hexModeFlag)
 }
 
 int
-returnSensorDataL3GD20H(int16_t readings[3])
+returnSensorDataL3GD20H(int16_t * readings)
 {
     uint16_t	    readSensorRegisterValueLSB;
     uint16_t	    readSensorRegisterValueMSB;
     int             i;
+    int             j = 0;
 
     warpScaleSupplyVoltage(deviceL3GD20HState.operatingVoltageMillivolts);
 
-    readSensorRegisterL3GD20H(kWarpSensorOutputRegisterL3GD20HOUT_X_L, 6 /* numberOfBytes */);
+    readSensorRegisterL3GD20H((kWarpSensorOutputRegisterL3GD20HOUT_X_L | 0x80), 6 /* numberOfBytes */);
     for ( i = 0; i < 6; i+=2) {
         readSensorRegisterValueLSB = deviceL3GD20HState.i2cBuffer[i];
         readSensorRegisterValueMSB = deviceL3GD20HState.i2cBuffer[i+1];
-        readings[i] = ((readSensorRegisterValueMSB & 0xFF) << 8) | (readSensorRegisterValueLSB & 0xFF);
+        readings[j] = ((readSensorRegisterValueMSB & 0xFF) << 8) | (readSensorRegisterValueLSB & 0xFF);
+        j++;
     }
     return 0;
 }

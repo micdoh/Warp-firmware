@@ -42,7 +42,6 @@ WarpStatus	writeSensorRegisterMMA8451Q(uint8_t deviceRegister,
 					uint8_t payloadBtye);
 WarpStatus	configureSensorMMA8451Q(uint8_t payloadF_SETUP, uint8_t payloadCTRL_REG1, uint8_t payloadXYZ_DATA_CFG);
 void		printSensorDataMMA8451Q(bool hexModeFlag);
-void  standbyMMA8451Q (void);
-void  activeMMA8451Q (void);
 int   returnSensorDataMMA8451Q(int16_t readings[3]);
+int   returnSensorDataMMA8451QFIFO(int16_t * readings);
 int   convertFromRawMMA8451Q(int16_t raw, uint8_t * digits);
