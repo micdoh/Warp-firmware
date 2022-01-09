@@ -78,9 +78,9 @@ typedef enum
 	/*
 	 *	Voltages
 	 */
-	kWarpDefaultSupplyVoltageMillivolts			= 3300,
-	kWarpDefaultSupplyVoltageMillivoltsMMA8451Q		= 3300,
-	kWarpDefaultSupplyVoltageMillivoltsL3GD20H		= 3300,
+	kWarpDefaultSupplyVoltageMillivolts			= 3000,
+	kWarpDefaultSupplyVoltageMillivoltsMMA8451Q		= 3000,
+	kWarpDefaultSupplyVoltageMillivoltsL3GD20H		= 3000,
 
     /*
      *  Configuration registers
