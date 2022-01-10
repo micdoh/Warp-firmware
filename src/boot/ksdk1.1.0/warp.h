@@ -93,6 +93,7 @@ typedef enum
     kWarpSensorConfigurationRegisterL3GD20HCTRL3			= 0x22,
     kWarpSensorConfigurationRegisterL3GD20HCTRL4			= 0x23,
 	kWarpSensorConfigurationRegisterL3GD20HCTRL5			= 0x24,
+    kWarpSensorConfigurationRegisterL3GD20HFIFO_CTRL		= 0x2E,
 
 } WarpSensorConfigurationRegister;
 

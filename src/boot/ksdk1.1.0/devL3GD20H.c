@@ -125,9 +125,9 @@ writeSensorRegisterL3GD20H(uint8_t deviceRegister, uint8_t payload)//, uint16_t 
 }
 
 WarpStatus
-configureSensorL3GD20H(uint8_t payloadCTRL1, uint8_t payloadCTRL2, uint8_t payloadCTRL5)//, uint16_t menuI2cPullupValue)
+configureSensorL3GD20H(uint8_t payloadCTRL1, uint8_t payloadCTRL2, uint8_t payloadCTRL5, uint8_t payloadFIFO_CTRL)//, uint16_t menuI2cPullupValue)
 {
-	WarpStatus	status1, status2, status3;
+	WarpStatus	status1, status2, status3, status4;
 
 
 	warpScaleSupplyVoltage(deviceL3GD20HState.operatingVoltageMillivolts);
@@ -141,7 +141,10 @@ configureSensorL3GD20H(uint8_t payloadCTRL1, uint8_t payloadCTRL2, uint8_t paylo
 	status3 = writeSensorRegisterL3GD20H(kWarpSensorConfigurationRegisterL3GD20HCTRL5 /* register address CTRL5 */,
 							payloadCTRL5);
 
-	return (status1 | status2 | status3);
+    status4 = writeSensorRegisterL3GD20H(kWarpSensorConfigurationRegisterL3GD20HFIFO_CTRL /* register address FIFO_CTRL */,
+                                         payloadFIFO_CTRL);
+
+	return (status1 | status2 | status3 | status4);
 }
 
 WarpStatus
@@ -317,7 +320,7 @@ printSensorDataL3GD20H(bool hexModeFlag)
 		}
 	}
 }
-
+/*
 int
 returnSensorDataL3GD20H(int16_t * readings)
 {
@@ -328,7 +331,7 @@ returnSensorDataL3GD20H(int16_t * readings)
 
     warpScaleSupplyVoltage(deviceL3GD20HState.operatingVoltageMillivolts);
 
-    readSensorRegisterL3GD20H((kWarpSensorOutputRegisterL3GD20HOUT_X_L | 0x80), 6 /* numberOfBytes */);
+    readSensorRegisterL3GD20H((kWarpSensorOutputRegisterL3GD20HOUT_X_L | 0x80), 6);
     for ( i = 0; i < 6; i+=2) {
         readSensorRegisterValueLSB = deviceL3GD20HState.i2cBuffer[i];
         readSensorRegisterValueMSB = deviceL3GD20HState.i2cBuffer[i+1];
@@ -337,9 +340,28 @@ returnSensorDataL3GD20H(int16_t * readings)
     }
     return 0;
 }
+*/
+int
+returnSensorDataL3GD20HFIFO(int16_t * readings, int8_t nBytes)
+{
+    uint16_t	    readSensorRegisterValueLSB;
+    uint16_t	    readSensorRegisterValueMSB;
+    WarpStatus	    i2cReadStatus;
+    int             i;
+    int             j = 0;
 
-/*uint8_t *
-convertFromRawL3GD20H(int16_t raw) {
-    uint16_t sensitivity = 0.00875;  // For +/-245 dps scale (default)
-    return (float) raw * sensitivity;
-}*/
+    warpScaleSupplyVoltage(deviceL3GD20HState.operatingVoltageMillivolts);
+
+    i2cReadStatus = readSensorRegisterL3GD20H((kWarpSensorOutputRegisterL3GD20HOUT_X_L | 0x80), nBytes);
+    if (i2cReadStatus != kWarpStatusOK)
+    {
+        warpPrint("L3GD20H read failed\n");
+    }
+    for ( i = 0; i < nBytes; i+=2) {
+        readSensorRegisterValueLSB = deviceL3GD20HState.i2cBuffer[i];
+        readSensorRegisterValueMSB = deviceL3GD20HState.i2cBuffer[i+1];
+        readings[j] = ((readSensorRegisterValueMSB & 0xFF) << 8) | (readSensorRegisterValueLSB & 0xFF);
+        j++;
+    }
+    return 0;
+}

@@ -101,7 +101,7 @@ writeMultipleCommand(uint8_t * commandBytes, uint8_t transferSize)
 
 
 int
-devSSD1331init(void)
+initSSD1331(void)
 {
 	/*
 	 *	Override Warp firmware's use of these pins.
