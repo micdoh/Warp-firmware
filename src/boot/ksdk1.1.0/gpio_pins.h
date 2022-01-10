@@ -40,39 +40,30 @@ enum _gpio_pins
 	kWarpPinEXTAL0				= GPIO_MAKE_PIN(HW_GPIOA, 3),	/*	PTA3: Reserved for EXTAL0	*/
 	kWarpPinXTAL0				= GPIO_MAKE_PIN(HW_GPIOA, 4),	/*	PTA4: Reserved for XTAL0	*/
 
-	#if (WARP_BUILD_ENABLE_GLAUX_VARIANT)
-		kWarpPinRTC_CLKIN		= GPIO_MAKE_PIN(HW_GPIOA, 5),
-	#else
-		kWarpPinBGX_nRST		= GPIO_MAKE_PIN(HW_GPIOA, 5),
-	#endif
 
-	kWarpPinSPI_MISO_UART_RTS		= GPIO_MAKE_PIN(HW_GPIOA, 6),
-	kWarpPinSPI_MOSI_UART_CTS		= GPIO_MAKE_PIN(HW_GPIOA, 7),
-	kWarpPinADXL362_SPI_nCS			= GPIO_MAKE_PIN(HW_GPIOA, 8),
+    //kWarpPinBGX_nRST		= GPIO_MAKE_PIN(HW_GPIOA, 5),
 
-	#if (WARP_BUILD_ENABLE_GLAUX_VARIANT)
-		kWarpPinSPI_SCK			= GPIO_MAKE_PIN(HW_GPIOA, 9),
-	#else
-		kWarpPinAT45DB_SPI_nCS		= GPIO_MAKE_PIN(HW_GPIOA, 9),
-	#endif
 
-	kWarpPinISL23415_SPI_nCS		= GPIO_MAKE_PIN(HW_GPIOB, 1),
+	//kWarpPinSPI_MISO_UART_RTS		= GPIO_MAKE_PIN(HW_GPIOA, 6),
+	//kWarpPinSPI_MOSI_UART_CTS		= GPIO_MAKE_PIN(HW_GPIOA, 7),
+    kWarpPinSPI_MOSI			= GPIO_MAKE_PIN(HW_GPIOA, 8),
+
+
+    kWarpPinSPI_CK		= GPIO_MAKE_PIN(HW_GPIOA, 9),
+
+
+    kWarpPinSPI_DC             		= GPIO_MAKE_PIN(HW_GPIOB, 1),
     kWarpPinMMA8451QINT2		    = GPIO_MAKE_PIN(HW_GPIOA, 12),
 
-	#if (WARP_BUILD_ENABLE_GLAUX_VARIANT)
-		kGlauxPinLED			= GPIO_MAKE_PIN(HW_GPIOB, 0),
-		kGlauxPinUnusedPTB1		= GPIO_MAKE_PIN(HW_GPIOB, 1),
-	#else
-		kWarpPinSPI_SCK			= GPIO_MAKE_PIN(HW_GPIOB, 0),
-		kWarpPinFPGA_nCS		= GPIO_MAKE_PIN(HW_GPIOB, 1),
-	#endif
+    kWarpPinSPI_R			        = GPIO_MAKE_PIN(HW_GPIOB, 0),
+    i2cSCL                  		= GPIO_MAKE_PIN(HW_GPIOB, 3),
+    i2cSDA                  		= GPIO_MAKE_PIN(HW_GPIOB, 4),
+    kWarpPinSPI_OC			= GPIO_MAKE_PIN(HW_GPIOB, 11),
 
-	#if (WARP_BUILD_ENABLE_GLAUX_VARIANT)
-		kGlauxPinFlash_SPI_nCS		= GPIO_MAKE_PIN(HW_GPIOB, 2),
-	#else
-		kWarpPinSI4705_nRST		= GPIO_MAKE_PIN(HW_GPIOB, 2),
-	#endif
 
+    //kWarpPinSI4705_nRST		= GPIO_MAKE_PIN(HW_GPIOB, 2),
+
+/*
 	kWarpPinI2C0_SCL_UART_TX		= GPIO_MAKE_PIN(HW_GPIOB, 3),
 	kWarpPinI2C0_SDA_UART_RX		= GPIO_MAKE_PIN(HW_GPIOB, 4),
 	kWarpPinTPS62740_REGCTRL		= GPIO_MAKE_PIN(HW_GPIOB, 5),
@@ -81,6 +72,7 @@ enum _gpio_pins
 	kWarpPinTPS62740_VSEL2			= GPIO_MAKE_PIN(HW_GPIOB, 10),
 	kWarpPinTPS62740_VSEL1			= GPIO_MAKE_PIN(HW_GPIOB, 11),
 	kWarpPinCLKOUT32K			    = GPIO_MAKE_PIN(HW_GPIOB, 13),
+ */
 };
 
 extern gpio_input_pin_user_config_t	    inputPins[];

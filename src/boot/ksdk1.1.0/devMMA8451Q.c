@@ -105,7 +105,7 @@ writeSensorRegisterMMA8451Q(uint8_t deviceRegister, uint8_t payload)
 		.baudRate_kbps = gWarpI2cBaudRateKbps
 	};
 
-	warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
+	//warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
 	commandByte[0] = deviceRegister;
 	payloadByte[0] = payload;
 	warpEnableI2Cpins();
@@ -129,28 +129,26 @@ writeSensorRegisterMMA8451Q(uint8_t deviceRegister, uint8_t payload)
 WarpStatus
 configureSensorMMA8451Q(uint8_t payloadF_SETUP, uint8_t payloadCTRL_REG1, uint8_t payloadXYZ_DATA_CFG)
 {
-	WarpStatus	i2cWriteStatus1, i2cWriteStatus2, i2cWriteStatus3;
+    WarpStatus	status;
 
-	warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_CTRL_REG1,val_MMA8451Q_CTRL_REG1);
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_CTRL_REG2,val_MMA8451Q_CTRL_REG2);
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_CTRL_REG3,val_MMA8451Q_CTRL_REG3);
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_CTRL_REG4,val_MMA8451Q_CTRL_REG4);
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_CTRL_REG5,val_MMA8451Q_CTRL_REG5);
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_F_SETUP,val_MMA8451Q_F_SETUP);
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_TRIG_CFG,val_MMA8451Q_TRIG_CFG);
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_XYZ_DATA_CFG,val_MMA8451Q_XYZ_DATA_CFG);
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_CFG,val_MMA8451Q_PULSE_CFG);
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_THSX,val_MMA8451Q_PULSE_THSX);
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_THSY,val_MMA8451Q_PULSE_THSY);
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_THSZ,val_MMA8451Q_PULSE_THSZ);
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_TMLT,val_MMA8451Q_PULSE_TMLT);
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_LTCY,val_MMA8451Q_PULSE_LTCY);
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_HP_FILTER_CUTOFF,val_MMA8451Q_HP_FILTER_CUTOFF);
+    status = writeSensorRegisterMMA8451Q(reg_MMA8451Q_CTRL_REG1,val_MMA8451Q_CTRL_REG1);
 
-    // Reset registers to defaults to begin
-    writeSensorRegisterMMA8451Q(kWarpSensorConfigurationRegisterMMA8451QCTRL_REG2 /* register address CTRL_REG2 */,
-                                0x40
-    );
-
-	i2cWriteStatus1 = writeSensorRegisterMMA8451Q(kWarpSensorConfigurationRegisterMMA8451QF_SETUP /* register address F_SETUP */,
-							payloadF_SETUP
-							);
-
-	i2cWriteStatus2 = writeSensorRegisterMMA8451Q(kWarpSensorConfigurationRegisterMMA8451QCTRL_REG1 /* register address CTRL_REG1 */,
-							payloadCTRL_REG1
-							);
-
-    i2cWriteStatus3 = writeSensorRegisterMMA8451Q(kWarpSensorConfigurationRegisterMMA8451QXYZ_DATA_CFG /* register address XYZ_DATA_CFG */,
-                                                  payloadXYZ_DATA_CFG
-    );
-
-	return (i2cWriteStatus1 | i2cWriteStatus2 | i2cWriteStatus3);
+    return status;
 }
 
 WarpStatus
@@ -191,7 +189,7 @@ readSensorRegisterMMA8451Q(uint8_t deviceRegister, int numberOfBytes)
 		.baudRate_kbps = gWarpI2cBaudRateKbps
 	};
 
-	warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
+	//warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
 	cmdBuf[0] = deviceRegister;
 	warpEnableI2Cpins();
 
@@ -222,7 +220,7 @@ printSensorDataMMA8451Q(bool hexModeFlag)
 	WarpStatus	i2cReadStatus;
 
 
-	warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
+	//warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
 
 	/*
 	 *	From the MMA8451Q datasheet:
@@ -358,7 +356,6 @@ returnSensorDataMMA8451QFIFO(int16_t * readings, uint8_t nBytes)
     int             i;
     int             j = 0;
 
-    warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
 
     i2cReadStatus = readSensorRegisterMMA8451Q(kWarpSensorOutputRegisterMMA8451QOUT_X_MSB, nBytes);
 
@@ -393,24 +390,12 @@ convertFromRawMMA8451Q(int16_t raw, uint8_t * digits) {
         sign = 1;  // Indicates negative number
         raw &= 0xFFFC;
         raw = (~raw) + 1;
-        //raw = raw << 1;
     }
-    //#if ((/*kWarpRegisterXYZ_DATA_CFGValueMMA8451Q*/0x01 & 0b00000011) == 0) // +/- 2g range
-    //    warpPrint("2g range\n");
-    //    digit = (raw & 0x4000) >> 14;
-    //    raw = raw << 2;
-    //#endif
-    //#if ((kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011) == 1) // +/- 4g
-        //warpPrint("4g range\n");
+    
         raw = raw << 1;
-        digit = (raw & 0x7000) >> 13;
+        digit = (raw & 0x7000) >> 13; // Get first digit
         raw = raw << 3;
-    //#endif
-    //#if ((kWarpRegisterXYZ_DATA_CFGValueMMA8451Q & 0b00000011) == 2) // +/- 8g range
-    //    warpPrint("8g range\n");
-    //    digit = (raw & 0x7000) >> 12;
-    //    raw = raw << 4;
-    //#endif
+        
     for (i = 0; i < 12; i++) {
         if ((raw & 0x8000) == 0x8000) {
             fracDigits += frac;
@@ -418,7 +403,7 @@ convertFromRawMMA8451Q(int16_t raw, uint8_t * digits) {
         frac = (frac+1) / 2;
         raw = raw << 1;
     }
-
+    
     digits[0] = sign;
     digits[1] = digit;
     digits[2] = (fracDigits / 1000) % 10;

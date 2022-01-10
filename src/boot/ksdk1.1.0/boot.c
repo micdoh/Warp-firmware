@@ -43,8 +43,8 @@
 
 #include "config.h"
 
-#include "fsl_interrupt_manager.h"
-#include "fsl_os_abstraction.h"
+//#include "fsl_interrupt_manager.h"
+//#include "fsl_os_abstraction.h"
 #include "fsl_misc_utilities.h"
 #include "fsl_device_registers.h"
 #include "fsl_i2c_master_driver.h"
@@ -124,11 +124,12 @@ void							warpLowPowerSecondsSleep(uint32_t sleepSeconds, bool forceAllPinsInto
 /*
  *	Derived from KSDK power_manager_demo.c BEGIN>>>
  */
-clock_manager_error_code_t clockManagerCallbackRoutine(clock_notify_struct_t *  notify, void *  callbackData);
+//clock_manager_error_code_t clockManagerCallbackRoutine(clock_notify_struct_t *  notify, void *  callbackData);
 
 /*
  *	static clock callback table.
  */
+/*
 clock_manager_callback_user_config_t		clockManagerCallbackUserlevelStructure =
 									{
 										.callback	= clockManagerCallbackRoutine,
@@ -160,11 +161,12 @@ clockManagerCallbackRoutine(clock_notify_struct_t *  notify, void *  callbackDat
 
 	return result;
 }
-
+*/
 
 /*
  *	Override the RTC IRQ handler
  */
+/*
 void
 RTC_IRQHandler(void)
 {
@@ -173,16 +175,17 @@ RTC_IRQHandler(void)
 		RTC_DRV_SetAlarmIntCmd(0, false);
 	}
 }
-
+*/
 /*
  *	Override the RTC Second IRQ handler
  */
+/*
 void
 RTC_Seconds_IRQHandler(void)
 {
 	gWarpSleeptimeSeconds++;
 }
-
+*/
 /*
  *	LLW_IRQHandler override. Since FRDM_KL03Z48M is not defined,
  *	according to power_manager_demo.c, what we need is LLW_IRQHandler.
@@ -224,6 +227,7 @@ BOARD_SW_LLWU_IRQ_HANDLER(void)
 /*
  *	Power manager user callback
  */
+/*
 power_manager_error_code_t
 callback0(power_manager_notify_struct_t *  notify, power_manager_callback_data_t *  dataPtr)
 {
@@ -245,7 +249,7 @@ callback0(power_manager_notify_struct_t *  notify, power_manager_callback_data_t
 
 	return status;
 }
-
+*/
 
 void
 warpEnableSPIpins(void)
@@ -278,23 +282,23 @@ warpEnableSPIpins(void)
 	SPI_DRV_MasterConfigureBus(0 /* SPI master instance */, (spi_master_user_config_t *)&spiUserConfig, &calculatedBaudRate);
 }
 
-
+/*
 void
 warpDisableSPIpins(void)
 {
 	SPI_DRV_MasterDeinit(0);
 
-	/*	kWarpPinSPI_MISO_UART_RTS	--> PTA6	(GPI)		*/
+	//	kWarpPinSPI_MISO_UART_RTS	--> PTA6	(GPI)
 	PORT_HAL_SetMuxMode(PORTA_BASE, 6, kPortMuxAsGpio);
 
-	/*	kWarpPinSPI_MOSI_UART_CTS	--> PTA7	(GPIO)		*/
+	//	kWarpPinSPI_MOSI_UART_CTS	--> PTA7	(GPIO)
 	PORT_HAL_SetMuxMode(PORTA_BASE, 7, kPortMuxAsGpio);
 
 	#if (WARP_BUILD_ENABLE_GLAUX_VARIANT)
-		/*	kWarpPinSPI_SCK	--> PTA9	(GPIO)			*/
+		//	kWarpPinSPI_SCK	--> PTA9	(GPIO)
 		PORT_HAL_SetMuxMode(PORTA_BASE, 9, kPortMuxAsGpio);
 	#else
-		/*	kWarpPinSPI_SCK	--> PTB0	(GPIO)			*/
+		//	kWarpPinSPI_SCK	--> PTB0	(GPIO)
 		PORT_HAL_SetMuxMode(PORTB_BASE, 0, kPortMuxAsGpio);
 	#endif
 
@@ -305,18 +309,7 @@ warpDisableSPIpins(void)
 
 	CLOCK_SYS_DisableSpiClock(0);
 }
-
-
-void
-debugPrintSPIsinkBuffer(void)
-{
-	for (int i = 0; i < kWarpMemoryCommonSpiBufferBytes; i++)
-	{
-		warpPrint("\tgWarpSpiCommonSinkBuffer[%d] = [0x%02X]\n", i, gWarpSpiCommonSinkBuffer[i]);
-	}
-	warpPrint("\n");
-}
-
+*/
 
 void
 warpEnableI2Cpins(void)
@@ -333,24 +326,6 @@ warpEnableI2Cpins(void)
 	PORT_HAL_SetMuxMode(PORTB_BASE, 4, kPortMuxAlt2);
 
 	I2C_DRV_MasterInit(0 /* I2C instance */, (i2c_master_state_t *)&i2cMasterState);
-}
-
-
-void
-warpDisableI2Cpins(void)
-{
-	I2C_DRV_MasterDeinit(0 /* I2C instance */);
-
-	/*
-	 *	Setup:
-	 *
-	 *		PTB3/kWarpPinI2C0_SCL_UART_TX	-->	disabled
-	 *		PTB4/kWarpPinI2C0_SDA_UART_RX	-->	disabled
-	 */
-	PORT_HAL_SetMuxMode(PORTB_BASE, 3, kPortPinDisabled);
-	PORT_HAL_SetMuxMode(PORTB_BASE, 4, kPortPinDisabled);
-
-	CLOCK_SYS_DisableI2cClock(0);
 }
 
 
@@ -418,7 +393,6 @@ lowPowerPinStates(void)
     PORT_HAL_SetPinIntMode(PORTA_BASE, 12, kPortIntEitherEdge);//kPortIntFallingEdge);
 
 
-
     /*
      *			PORT B
      */
@@ -435,7 +409,7 @@ lowPowerPinStates(void)
     PORT_HAL_SetMuxMode(PORTB_BASE, 13, kPortPinDisabled);
 }
 
-
+/*
 void
 disableTPS62740(void)
 {
@@ -443,12 +417,13 @@ disableTPS62740(void)
 		GPIO_DRV_ClearPinOutput(kWarpPinTPS62740_REGCTRL);
 	#endif
 }
-
-
+*/
+/*
 void
 enableTPS62740(uint16_t voltageMillivolts)
 {
 	#if (!WARP_BUILD_ENABLE_GLAUX_VARIANT)
+ */
 		/*
 		 *	By default, assumme pins are currently disabled (e.g., by a recent lowPowerPinStates())
 		 *
@@ -459,6 +434,7 @@ enableTPS62740(uint16_t voltageMillivolts)
 		 *		PTB10/kWarpPinTPS62740_VSEL2 for GPIO
 		 *		PTB11/kWarpPinTPS62740_VSEL1 for GPIO
 		 */
+/*
 		PORT_HAL_SetMuxMode(PORTB_BASE, 5, kPortMuxAsGpio);
 		PORT_HAL_SetMuxMode(PORTB_BASE, 6, kPortMuxAsGpio);
 		PORT_HAL_SetMuxMode(PORTB_BASE, 7, kPortMuxAsGpio);
@@ -469,8 +445,8 @@ enableTPS62740(uint16_t voltageMillivolts)
 		GPIO_DRV_SetPinOutput(kWarpPinTPS62740_REGCTRL);
 	#endif
 }
-
-
+*/
+/*
 void
 setTPS62740CommonControlLines(uint16_t voltageMillivolts)
 {
@@ -637,23 +613,23 @@ setTPS62740CommonControlLines(uint16_t voltageMillivolts)
 				break;
 			}
 
-			/*
-			 *	Should never happen, due to previous check in warpScaleSupplyVoltage()
-			 */
+
+			 //	Should never happen, due to previous check in warpScaleSupplyVoltage()
+
 			default:
 			{
 				warpPrint(RTT_CTRL_RESET RTT_CTRL_BG_BRIGHT_YELLOW RTT_CTRL_TEXT_BRIGHT_WHITE kWarpConstantStringErrorSanity RTT_CTRL_RESET "\n");
 			}
 		}
 
-		/*
-		 *	Vload ramp time of the TPS62740 is 800us max (datasheet, Table 8.5 / page 6)
-		 */
+
+		 //	Vload ramp time of the TPS62740 is 800us max (datasheet, Table 8.5 / page 6)
+
 		OSA_TimeDelay(gWarpSupplySettlingDelayMilliseconds);
 	#endif
 }
-
-
+*/
+/*
 void
 warpScaleSupplyVoltage(uint16_t voltageMillivolts)
 {
@@ -674,50 +650,50 @@ warpScaleSupplyVoltage(uint16_t voltageMillivolts)
 		}
 	#endif
 }
-
-
+*/
+/*
 void
 warpDisableSupplyVoltage(void)
 {
 	#if (!WARP_BUILD_ENABLE_GLAUX_VARIANT)
 		disableTPS62740();
 
-		/*
-		 *	Vload ramp time of the TPS62740 is 800us max (datasheet, Table 8.5 / page 6)
-		 */
+
+		 //	Vload ramp time of the TPS62740 is 800us max (datasheet, Table 8.5 / page 6)
+
 		OSA_TimeDelay(gWarpSupplySettlingDelayMilliseconds);
 	#endif
 }
-
-
+*/
+/*
 void
 warpLowPowerSecondsSleep(uint32_t sleepSeconds, bool forceAllPinsIntoLowPowerState)
 {
 	WarpStatus	status = kWarpStatusOK;
 
-	/*
-	 *	Set all pins into low-power states. We don't just disable all pins,
-	 *	as the various devices hanging off will be left in higher power draw
-	 *	state. And manuals say set pins to output to reduce power.
-	 */
+
+	 //	Set all pins into low-power states. We don't just disable all pins,
+	 //	as the various devices hanging off will be left in higher power draw
+	 //	state. And manuals say set pins to output to reduce power.
+
 	if (forceAllPinsIntoLowPowerState)
 	{
 		lowPowerPinStates();
 	}
 
-	warpSetLowPowerMode(kWarpPowerModeVLPR, 0 /* Sleep Seconds */);
+	warpSetLowPowerMode(kWarpPowerModeVLPR, 0);
 	if ((status != kWarpStatusOK) && (status != kWarpStatusPowerTransitionErrorVlpr2Vlpr))
 	{
-		warpPrint("warpSetLowPowerMode(kWarpPowerModeVLPR, 0 /* sleep seconds : irrelevant here */)() failed...\n");
+		warpPrint("warpSetLowPowerMode(kWarpPowerModeVLPR, 0)() failed...\n");
 	}
 
 	status = warpSetLowPowerMode(kWarpPowerModeVLPS, sleepSeconds);
 	if (status != kWarpStatusOK)
 	{
-		warpPrint("warpSetLowPowerMode(kWarpPowerModeVLPS, 0 /* sleep seconds : irrelevant here */)() failed...\n");
+		warpPrint("warpSetLowPowerMode(kWarpPowerModeVLPS, 0)() failed...\n");
 	}
 }
-
+*/
 
 uint16_t
 iterativeAvg(uint16_t prev_avg, uint16_t cur_elem, uint8_t n) {
@@ -775,44 +751,8 @@ warpPrint(const char *fmt, ...)
 }
 
 
-int
-warpWaitKey(void)
-{
-	/*
-	 *	SEGGER'S implementation assumes the result of
-	 *	SEGGER_RTT_GetKey() is an int, so we play along.
-	 */
-	int		rttKey, bleChar = kWarpMiscMarkerForAbsentByte;
-
-	/*
-	 *	Set the UART buffer to 0xFF and then wait until either the
-	 *	UART RX buffer changes or the RTT icoming key changes.
-	 *
-	 *	The check below on rttKey is exactly what SEGGER_RTT_WaitKey()
-	 *	does in SEGGER_RTT.c.
-	 */
-
-	do
-	{
-		rttKey	= SEGGER_RTT_GetKey();
-
-		/*
-		 *	NOTE: We ignore all chars on BLE except '0'-'9', 'a'-'z'/'A'-Z'
-		 */
-		if (!(bleChar > 'a' && bleChar < 'z') && !(bleChar > 'A' && bleChar < 'Z') && !(bleChar > '0' && bleChar < '9'))
-		{
-			bleChar = kWarpMiscMarkerForAbsentByte;
-		}
-	} while ((rttKey < 0) && (bleChar == kWarpMiscMarkerForAbsentByte));
-
-
-	return rttKey;
-}
-
-
 void PORTA_IRQHandler(void)
 {
-    //readSensorRegisterMMA8451Q(0x00, 1); // Clear interrupt flag
     PORT_HAL_ClearPortIntFlag(PORTA_BASE); // Lower interrupt pin
     dataReady = 1;
 }
@@ -821,6 +761,7 @@ void PORTA_IRQHandler(void)
 int
 main(void) {
     WarpStatus status;
+    /*
     rtc_datetime_t warpBootDate;
     power_manager_user_config_t warpPowerModeWaitConfig;
     power_manager_user_config_t warpPowerModeStopConfig;
@@ -830,22 +771,24 @@ main(void) {
     power_manager_user_config_t warpPowerModeVlls1Config;
     power_manager_user_config_t warpPowerModeVlls3Config;
     power_manager_user_config_t warpPowerModeRunConfig;
-
+*/
     /*
      *	We use this as a template later below and change the .mode fields for the different other modes.
      */
+    /*
     const power_manager_user_config_t warpPowerModeVlprConfig = {
             .mode            = kPowerManagerVlpr,
             .sleepOnExitValue    = false,
             .sleepOnExitOption    = false
     };
-
-    power_manager_user_config_t const *powerConfigs[] = {
+*/
+    //power_manager_user_config_t const *powerConfigs[] = {
             /*
              *	NOTE: POWER_SYS_SetMode() depends on this order
              *
              *	See KSDK13APIRM.pdf Section 55.5.3
              */
+            /*
             &warpPowerModeWaitConfig,
             &warpPowerModeStopConfig,
             &warpPowerModeVlprConfig,
@@ -858,21 +801,22 @@ main(void) {
     };
 
     WarpPowerManagerCallbackStructure powerManagerCallbackStructure;
-
+*/
     /*
      *	Callback configuration structure for power manager
      */
+    /*
     const power_manager_callback_user_config_t callbackCfg0 = {
             callback0,
             kPowerManagerCallbackBeforeAfter,
             (power_manager_callback_data_t * ) & powerManagerCallbackStructure};
-
+*/
     /*
      *	Pointers to power manager callbacks.
      */
-    power_manager_callback_user_config_t const *callbacks[] = {
-            &callbackCfg0
-    };
+    //power_manager_callback_user_config_t const *callbacks[] = {
+    //        &callbackCfg0
+    //};
 
     /*
      *	Enable clock for I/O PORT A and PORT B
@@ -916,23 +860,24 @@ main(void) {
      *
      *	See "Clocks and Low Power modes with KSDK and Processor Expert" document (Low_Power_KSDK_PEx.pdf)
      */
-    CLOCK_SYS_Init(g_defaultClockConfigurations,
-                   CLOCK_CONFIG_NUM, /* The default value of this is defined in fsl_clock_MKL03Z4.h as 2 */
-                   &clockCallbackTable,
-                   ARRAY_SIZE(clockCallbackTable)
-    );
-    CLOCK_SYS_UpdateConfiguration(CLOCK_CONFIG_INDEX_FOR_RUN, kClockManagerPolicyForcible);
+    //CLOCK_SYS_Init(g_defaultClockConfigurations,
+    //               CLOCK_CONFIG_NUM, /* The default value of this is defined in fsl_clock_MKL03Z4.h as 2 */
+    //               &clockCallbackTable,
+    //               ARRAY_SIZE(clockCallbackTable)
+    //);
+    //CLOCK_SYS_UpdateConfiguration(CLOCK_CONFIG_INDEX_FOR_RUN, kClockManagerPolicyForcible);
 
     /*
      *	Initialize RTC Driver (not needed on Glaux, but we enable it anyway for now
      *	as that lets us use the current sleep routines). NOTE: We also don't seem to
      *	be able to go to VLPR mode unless we enable the RTC.
      */
-    RTC_DRV_Init(0);
+    //RTC_DRV_Init(0);
 
     /*
      *	Set initial date to 1st January 2016 00:00, and set date via RTC driver
      */
+    /*
     warpBootDate.year = 2016U;
     warpBootDate.month = 1U;
     warpBootDate.day = 1U;
@@ -940,10 +885,11 @@ main(void) {
     warpBootDate.minute = 0U;
     warpBootDate.second = 0U;
     RTC_DRV_SetDatetime(0, &warpBootDate);
-
+*/
     /*
      *	Setup Power Manager Driver
      */
+    /*
     memset(&powerManagerCallbackStructure, 0, sizeof(WarpPowerManagerCallbackStructure));
 
     warpPowerModeVlpwConfig = warpPowerModeVlprConfig;
@@ -974,7 +920,7 @@ main(void) {
                    &callbacks,
                    sizeof(callbacks) / sizeof(power_manager_callback_user_config_t * )
     );
-
+*/
     /*
      *	Switch CPU to Very Low Power Run (VLPR) mode
      */
@@ -1013,9 +959,8 @@ main(void) {
      */
     gWarpBooted = true;
 
-
     PORT_HAL_SetMuxMode(PORTA_BASE, 12, kPortMuxAsGpio);
-    PORT_HAL_SetPinIntMode(PORTA_BASE, 12, kPortIntEitherEdge);//kPortIntFallingEdge);
+    PORT_HAL_SetPinIntMode(PORTA_BASE, 12, kPortIntFallingEdge);
 
 
     initMMA8451Q(0x1D, kWarpDefaultSupplyVoltageMillivoltsMMA8451Q);
@@ -1069,15 +1014,8 @@ main(void) {
     //    printSensorDataINA219(true, 0x01);  // Read V_shunt and convert to current (R=0.1 Ohm)
     //}
 
-    configureSensorMMA8451Q(kWarpRegisterF_SETUPValueMMA8451Q,
-                            kWarpRegisterCTRL_REG1ValueMMA8451Q,
-                            kWarpRegisterXYZ_DATA_CFGValueMMA8451Q
-                            );
-    configureSensorL3GD20H(kWarpRegisterCTRL1ValueL3GD20H,
-                           kWarpRegisterCTRL2ValueL3GD20H,
-                           kWarpRegisterCTRL5ValueL3GD20H,
-                           kWarpRegisterFIFO_CTRLValueL3GD20H
-                           );
+    configureSensorMMA8451Q();
+    configureSensorL3GD20H();
     /*
     uint8_t digits[6];
     int16_t test = 0b1111111111111111;
@@ -1094,13 +1032,12 @@ main(void) {
                       deviceMMA8451QState.i2cBuffer[5]);
      */
 
-/*
     j = 0;
     while (j < 100) {
 
         readSensorRegisterL3GD20H(0x2F, 1);
         statusRegisterValueGyro = deviceL3GD20HState.i2cBuffer[0];
-
+        warpPrint("Gyro %d\n", statusRegisterValueGyro);
         if ((statusRegisterValueGyro & 0b10000000) == 0b10000000) {
 
             returnSensorDataL3GD20HFIFO(readingsL3GD20HFIFO, kWarpSizesI2cBufferBytes);
@@ -1122,8 +1059,8 @@ main(void) {
 
         readSensorRegisterMMA8451Q(0x00, 1);
         statusRegisterValueAccel = deviceMMA8451QState.i2cBuffer[0];
-
-        if ((statusRegisterValueAccel & 0b01000000) == 0b01000000) {
+        warpPrint("Accel %d\n", statusRegisterValueAccel);
+        if ((statusRegisterValueAccel & 0b10000000) == 0b10000000) {
 
             returnSensorDataMMA8451QFIFO(readingsMMA8451QFIFO, kWarpSizesI2cBufferBytes);
             k = 0;
@@ -1143,15 +1080,11 @@ main(void) {
     int8_t Z_OFFSET = ((4096-zeroRateAccelZ)/8) * 1;
     warpPrint("ZERO: %d, %d, %d\n", zeroRateAccelX, zeroRateAccelY, zeroRateAccelZ);
     warpPrint("OFFSETS: %d, %d, %d\n", X_OFFSET, Y_OFFSET, Z_OFFSET);
-    writeSensorRegisterMMA8451Q(kWarpSensorConfigurationRegisterMMA8451QCTRL_REG1, 0x00); // Standby
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_CTRL_REG1, 0x00); // Standby
     writeSensorRegisterMMA8451Q(0x2F, X_OFFSET); // x_OFFSET
     writeSensorRegisterMMA8451Q(0x30, Y_OFFSET); // Y_OFFSET
     writeSensorRegisterMMA8451Q(0x31, Z_OFFSET); // Z_OFFSET
-    writeSensorRegisterMMA8451Q(kWarpSensorConfigurationRegisterMMA8451QCTRL_REG1, kWarpRegisterCTRL_REG1ValueMMA8451Q); // Active
-*/
-    writeSensorRegisterMMA8451Q(kWarpSensorConfigurationRegisterMMA8451QCTRL_REG1, 0x00); // Standby
-    writeSensorRegisterMMA8451Q(0x2D, 0x40); // FIFO interrupt to INT2 (PTA12)
-    writeSensorRegisterMMA8451Q(kWarpSensorConfigurationRegisterMMA8451QCTRL_REG1, kWarpRegisterCTRL_REG1ValueMMA8451Q); // Active
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_CTRL_REG1, val_MMA8451Q_CTRL_REG1); // Active
 
     writeSensorRegisterL3GD20H(0x22, 0b10000100);
     clearScreen();
@@ -1160,16 +1093,10 @@ main(void) {
     timeStart = OSA_TimeGetMsec();
     drawPoint(35, 25, 8, 255, 255, 255);
 
-    //warpPrint("AAA");
-    //INT_SYS_EnableIRQ(PORTA_IRQn);
-    //warpPrint("BBB");
-    //OSA_InstallIntHandler(PORTA_IRQn, PORTA_IRQHandler);
-    //warpPrint("CCC");
-
     while (1) {
 
         if (dataReady) {
-            readSensorRegisterMMA8451Q(0x00, 1); // Clear interrupt flag
+            readSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_SRC, 1); // Clear interrupt flag
             warpPrint("READY\n");
         }
         //warpPrint("%d", dataReady);
@@ -1179,7 +1106,7 @@ main(void) {
         readSensorRegisterMMA8451Q(0x00, 1);
         statusRegisterValueAccel = deviceMMA8451QState.i2cBuffer[0];
 
-        if ((statusRegisterValueAccel & 0b01000000) == 0b01000000) {
+        if ((statusRegisterValueAccel & 0b10000000) == 0b10000000) {
 
             returnSensorDataMMA8451QFIFO(readingsMMA8451QFIFO, kWarpSizesI2cBufferBytes);
             j = 0;
@@ -1207,8 +1134,6 @@ main(void) {
             yGyro = readingsL3GD20HFIFO[1];
             zGyro = readingsL3GD20HFIFO[2];
         }
-
-        //warpPrint("regValues: %d %d\n", statusRegisterValueGyro, statusRegisterValueAccel);
 
         if (currTime - timeStart >= 1000) {
             convertFromRawMMA8451Q(zAccel, digits);

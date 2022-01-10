@@ -81,20 +81,30 @@ typedef enum
 
 typedef enum
 {
-	kWarpSensorConfigurationRegisterMMA8451QF_SETUP			= 0x09,
-	kWarpSensorConfigurationRegisterMMA8451QCTRL_REG1		= 0x2A,
-    kWarpSensorConfigurationRegisterMMA8451QCTRL_REG2       = 0x2B,
-    kWarpSensorConfigurationRegisterMMA8451QCTRL_REG3       = 0x2C,
-    kWarpSensorConfigurationRegisterMMA8451QCTRL_REG4       = 0x2D,
-    kWarpSensorConfigurationRegisterMMA8451QCTRL_REG5       = 0x2E,
-    kWarpSensorConfigurationRegisterMMA8451QXYZ_DATA_CFG    = 0x0E,
 
-	kWarpSensorConfigurationRegisterL3GD20HCTRL1			= 0x20,
-	kWarpSensorConfigurationRegisterL3GD20HCTRL2			= 0x21,
-    kWarpSensorConfigurationRegisterL3GD20HCTRL3			= 0x22,
-    kWarpSensorConfigurationRegisterL3GD20HCTRL4			= 0x23,
-	kWarpSensorConfigurationRegisterL3GD20HCTRL5			= 0x24,
-    kWarpSensorConfigurationRegisterL3GD20HFIFO_CTRL		= 0x2E,
+    reg_L3GD20H_CTRL_1 = 0x20,
+    reg_L3GD20H_CTRL_2 = 0x21,
+    reg_L3GD20H_CTRL_3 = 0x22,
+    reg_L3GD20H_CTRL_4 = 0x23,
+    reg_L3GD20H_CTRL_5 = 0x24,
+    reg_L3GD20H_FIFO_CTRL = 0x2E,
+
+    reg_MMA8451Q_CTRL_REG1 = 0x2A,
+    reg_MMA8451Q_CTRL_REG2 = 0x2B,
+    reg_MMA8451Q_CTRL_REG3 = 0x2C,
+    reg_MMA8451Q_CTRL_REG4 = 0x2D,
+    reg_MMA8451Q_CTRL_REG5 = 0x2E,
+    reg_MMA8451Q_F_SETUP = 0x09,
+    reg_MMA8451Q_TRIG_CFG = 0x0A,
+    reg_MMA8451Q_XYZ_DATA_CFG = 0x0E,
+    reg_MMA8451Q_PULSE_CFG = 0x21,
+    reg_MMA8451Q_PULSE_SRC = 0x21, // Read only
+    reg_MMA8451Q_PULSE_THSX = 0x23,
+    reg_MMA8451Q_PULSE_THSY = 0x24,
+    reg_MMA8451Q_PULSE_THSZ = 0x25,
+    reg_MMA8451Q_PULSE_TMLT = 0x26,
+    reg_MMA8451Q_PULSE_LTCY = 0x27,
+    reg_MMA8451Q_HP_FILTER_CUTOFF = 0x0F,
 
 } WarpSensorConfigurationRegister;
 

@@ -70,7 +70,7 @@ typedef enum
 	*/
 	kWarpDefaultPrintBufferSizeBytes			= 64,
 	kWarpMemoryCommonSpiBufferBytes				= 64,
-	kWarpSizesI2cBufferBytes				= 192, // 6x the FIFO sample watermark
+	kWarpSizesI2cBufferBytes				= 48, // 6x the FIFO sample watermark
 	kWarpSizesSpiBufferBytes				= 7,
 	kWarpSizesUartBufferBytes				= 8,
 
@@ -84,13 +84,28 @@ typedef enum
     /*
      *  Configuration registers
      */
-    kWarpRegisterCTRL1ValueL3GD20H = 0b11111111,  // ODR 800Hz, 100Hz cut-off, see table 21, normal mode, x,y,z enable
-    kWarpRegisterCTRL2ValueL3GD20H = 0b00100000,
-    kWarpRegisterCTRL5ValueL3GD20H = 0b01100000,//0b00000000,  // normal mode, disable FIFO, disable high pass filter
-    kWarpRegisterFIFO_CTRLValueL3GD20H = 0b11001000,
+    val_L3GD20H_CTRL_1 = 0b10001111, // ODR 400Hz, 20Hz LPF cut-off, see table 21, normal mode, x,y,z enable
+    val_L3GD20H_CTRL_2 = 0b00000000, // No HPF
+    val_L3GD20H_CTRL_3 = 0b00000000, // No interrupt
+    val_L3GD20H_CTRL_4 = 0b10000000, // Block data update
+    val_L3GD20H_CTRL_5 = 0b01000010, // Enable FIFO, enable LPF2 (20Hz cut-off)
+    val_L3GD20H_FIFO_CTRL = 0b11000000, // FIFO dynamic stream mode, 32 sample threshold (default)
 
-    kWarpRegisterF_SETUPValueMMA8451Q = 0b01000000,//0b01001000,   // Enable FIFO, 8 sample watermark (8 best so far)
-    kWarpRegisterCTRL_REG1ValueMMA8451Q = 0b00010101,//0x05,   // Normal read 14-bit, 800Hz, low noise (limited to +/-4g), active mode
-    kWarpRegisterXYZ_DATA_CFGValueMMA8451Q = 0x01,  // No high-pass filter, +/-4g range
+    val_MMA8451Q_CTRL_REG1 = 0b00001101, // 400Hz, low noise (limited to +/-4g), active mode
+    val_MMA8451Q_CTRL_REG2 = 0b00000000, // Normal power mode
+    val_MMA8451Q_CTRL_REG3 = 0b00000000, // No interrupt waking from sleep
+    val_MMA8451Q_CTRL_REG4 = 0b00001000, // Enable pulse interrupt
+    val_MMA8451Q_CTRL_REG5 = 0b00000000, // Interrupts to INT2
+    val_MMA8451Q_F_SETUP = 0b01000000, // FIFO circular buffer, 32 samples threshold (default)
+    val_MMA8451Q_TRIG_CFG = 0b01000000, // +/- 4g range
+    val_MMA8451Q_XYZ_DATA_CFG = 0b00000001,  // No high-pass filter, +/-4g range
+    val_MMA8451Q_PULSE_CFG = 0b00010101, // Single pulse enabled for z, y, x axes
+    val_MMA8451Q_PULSE_THSX = 0x19, // Set X Threshold to 1.575g (LSB is 8g/127 = 0.063g)
+    val_MMA8451Q_PULSE_THSY = 0x19, // Set Y Threshold to 1.575g
+    val_MMA8451Q_PULSE_THSZ = 0x2A, // Set Z Threshold to 2.65g
+    val_MMA8451Q_PULSE_TMLT = 0x50, // 50ms time limit for pulse to exceed threshold and drop below
+    val_MMA8451Q_HP_FILTER_CUTOFF = 0b00010000, // Enable LPF for pulse detection
+    val_MMA8451Q_PULSE_LTCY = 0xF0, // 300ms window until next pulse detected
+
 
 } WarpDefaults;
