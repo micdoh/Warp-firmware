@@ -57,6 +57,7 @@ enum _gpio_pins
 	#endif
 
 	kWarpPinISL23415_SPI_nCS		= GPIO_MAKE_PIN(HW_GPIOB, 1),
+    kWarpPinMMA8451QINT2		    = GPIO_MAKE_PIN(HW_GPIOA, 12),
 
 	#if (WARP_BUILD_ENABLE_GLAUX_VARIANT)
 		kGlauxPinLED			= GPIO_MAKE_PIN(HW_GPIOB, 0),

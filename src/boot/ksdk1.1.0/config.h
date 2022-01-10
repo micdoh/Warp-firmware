@@ -37,11 +37,10 @@
 
 #define		WARP_BUILD_ENABLE_SEGGER_RTT_PRINTF		1
 #define		WARP_BUILD_BOOT_TO_CSVSTREAM			0
-#define		WARP_BUILD_BOOT_TO_VLPR				1
+#define		WARP_BUILD_BOOT_TO_VLPR				0
 #define		WARP_BUILD_DISABLE_SUPPLIES_BY_DEFAULT		0
 
 #define		WARP_BUILD_ENABLE_FRDMKL03			1
-
 
 #define		WARP_BUILD_ENABLE_DEVL3GD20H		1
 #define		WARP_BUILD_ENABLE_DEVMMA8451Q		1
@@ -71,7 +70,7 @@ typedef enum
 	*/
 	kWarpDefaultPrintBufferSizeBytes			= 64,
 	kWarpMemoryCommonSpiBufferBytes				= 64,
-	kWarpSizesI2cBufferBytes				= 42, // 6x the FIFO sample watermark
+	kWarpSizesI2cBufferBytes				= 192, // 6x the FIFO sample watermark
 	kWarpSizesSpiBufferBytes				= 7,
 	kWarpSizesUartBufferBytes				= 8,
 
@@ -88,10 +87,10 @@ typedef enum
     kWarpRegisterCTRL1ValueL3GD20H = 0b11111111,  // ODR 800Hz, 100Hz cut-off, see table 21, normal mode, x,y,z enable
     kWarpRegisterCTRL2ValueL3GD20H = 0b00100000,
     kWarpRegisterCTRL5ValueL3GD20H = 0b01100000,//0b00000000,  // normal mode, disable FIFO, disable high pass filter
-    kWarpRegisterFIFO_CTRLValueL3GD20H = 0b11000111,
+    kWarpRegisterFIFO_CTRLValueL3GD20H = 0b11001000,
 
-    kWarpRegisterF_SETUPValueMMA8451Q = 0b01000111,   // Enable FIFO, 8 sample watermark (8 best so far)
-    kWarpRegisterCTRL_REG1ValueMMA8451Q = 0x05,   // Normal read 14-bit, 800Hz, low noise (limited to +/-4g), active mode
+    kWarpRegisterF_SETUPValueMMA8451Q = 0b01000000,//0b01001000,   // Enable FIFO, 8 sample watermark (8 best so far)
+    kWarpRegisterCTRL_REG1ValueMMA8451Q = 0b00010101,//0x05,   // Normal read 14-bit, 800Hz, low noise (limited to +/-4g), active mode
     kWarpRegisterXYZ_DATA_CFGValueMMA8451Q = 0x01,  // No high-pass filter, +/-4g range
 
 } WarpDefaults;

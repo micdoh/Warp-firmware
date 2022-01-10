@@ -54,96 +54,7 @@
 	}
 #endif
 
-void
-gpioDisableWakeUp(void)
-{
-	/*
-	 *	Disables interrupt on LLWU_Px. The BOARD_* defines are defined in warp.h
-	 */
-	PORT_HAL_SetPinIntMode(BOARD_SW_LLWU_BASE, BOARD_SW_LLWU_PIN, kPortIntDisabled);
-	INT_SYS_DisableIRQ(BOARD_SW_LLWU_IRQ_NUM);
-}
 
-
-
-void
-gpioEnableWakeUp(void)
-{
-	/*
-	 *	To make assurance doubly sure, turn off RTC based on Errata 8068 / AN4503.
-	 *	Revisit the need for this once we have more measurements:
-	 *
-	 *	For KL03 chip errata 8068. See https://community.nxp.com/thread/350259,
-	 *	combined with ideas from AN4503 page 2.
-	 *
-	 *	Enabling this block will kill the RTC, which means no sleep routines, etc.
-	 */
-	volatile unsigned int	dummyread;
-
-	__asm("CPSID i");			/*	Disable interrupts		*/
-	SIM->COPC=0x00;				/*	Disable COP watchdog		*/
-	dummyread = SIM->COPC;			/*	Read-after-write sequence	*/
-
-	/*
-	 *	Errata 8068 fix
-	 */
-	SIM->SCGC6 |= SIM_SCGC6_RTC_MASK;	/*	Enable clock to RTC				*/
-	dummyread = SIM->SCGC6;			/*	Read-after-write sequence			*/
-	RTC->TSR = 0x00;			/*	Dummy write to RTC TSR per errata 8068		*/
-	dummyread = RTC->TSR;			/*	Read-after-write sequence			*/
-	SIM->SCGC6 &= ~SIM_SCGC6_RTC_MASK;	/*	Disable clock to RTC				*/
-	dummyread = SIM->SCGC6;			/*	Read-after-write sequence			*/
-
-
-
-	/*
-	 *	See also AN4503, Section 3.1.6.
-	 *
-	 *	First, enable the PORTA clock but disable the PORTB clock.
-	 */
-	CLOCK_SYS_EnablePortClock(0);
-	CLOCK_SYS_DisablePortClock(1);
-
-
-
-	/*
-	 *
-	 *	Next, make PTA0 switch from being SWD to being PTA0/LLWU_P7/IRQ0
-	 *	We don't need to revert this later, since waking up from VLLx is done
-	 *	through a soft reset and that config is lost? (TODO: double check.)
-	 */
-	GPIO_DRV_Init(wakeupPins  /* input pins */, NULL  /* output pins */);
-	PORT_HAL_SetMuxMode(PORTA_BASE, 0, kPortMuxAsGpio);
-
-	/*
-	 *	Enables any edge interrupt for the LLWU_Px pin
-	 */
-	PORT_HAL_SetPinIntMode(BOARD_SW_LLWU_BASE, BOARD_SW_LLWU_PIN, kPortIntEitherEdge);
-	INT_SYS_EnableIRQ(BOARD_SW_LLWU_IRQ_NUM);
-
-	/*
-	 *	Redundant? Check. 
-	 */
-	INT_SYS_EnableIRQ(LLWU_IRQn);
-
-	LLWU_HAL_ClearExternalPinWakeupFlag(LLWU_BASE, (llwu_wakeup_pin_t)BOARD_SW_LLWU_EXT_PIN);
-
-	/*
-	 *	Configure LLWU_P7 as low-leakage wakeup source.
-	 *
-	 *	See
-	 *
-	 *		Kinetis SDK v.1.1 API Reference Manual Chapter 33.
-	 *	
-	 *	and
-	 *		KL03 Sub-Family Reference Manual, Rev. 4, August, 2014, Chapter 19.
-	 *
-	 *	Set to enable pin 7 (PTA0/IRQ0/LLWU_P7) as VLLx wakeup source, trigger on any edge.
-	 */
-	LLWU_HAL_SetExternalInputPinMode(LLWU_BASE, kLlwuExternalPinChangeDetect, (llwu_wakeup_pin_t)BOARD_SW_LLWU_EXT_PIN);
-
-	USED(dummyread);
-}
 
 void
 updateClockManagerToRunMode(uint8_t cmConfigMode)
@@ -224,7 +135,7 @@ warpSetLowPowerMode(WarpPowerMode powerMode, uint32_t sleepSeconds)
 				 *	TODO: Need to test Warp variant of firmware on Glaux HW and see if
 				 *	we are able to wake from VLLS0.
 				 */
-				gpioDisableWakeUp();
+				//gpioDisableWakeUp();
 				setSleepRtcAlarm(sleepSeconds);
 			#endif
 
@@ -276,7 +187,7 @@ warpSetLowPowerMode(WarpPowerMode powerMode, uint32_t sleepSeconds)
 				 *	TODO: Need to test Warp variant of firmware on Glaux HW and see if
 				 *	we are able to wake from VLLS0.
 				 */
-				gpioDisableWakeUp();
+				//gpioDisableWakeUp();
 				setSleepRtcAlarm(sleepSeconds);
 			#endif
 
@@ -346,7 +257,7 @@ warpSetLowPowerMode(WarpPowerMode powerMode, uint32_t sleepSeconds)
 				 *	TODO: Need to test Warp variant of firmware on Glaux HW and see if
 				 *	we are able to wake from VLLS0.
 				 */
-				gpioDisableWakeUp();
+				//gpioDisableWakeUp();
 				setSleepRtcAlarm(sleepSeconds);
 			#endif
 
@@ -389,7 +300,7 @@ warpSetLowPowerMode(WarpPowerMode powerMode, uint32_t sleepSeconds)
 				 *	TODO: Need to test Warp variant of firmware on Glaux HW and see if
 				 *	we are able to wake from VLLS0.
 				 */
-				gpioDisableWakeUp();
+				//gpioDisableWakeUp();
 				setSleepRtcAlarm(sleepSeconds);
 			#endif
 
@@ -460,7 +371,7 @@ warpSetLowPowerMode(WarpPowerMode powerMode, uint32_t sleepSeconds)
 				 *	TODO: Need to test Warp variant of firmware on Glaux HW and see if
 				 *	we are able to wake from VLLS0.
 				 */
-				gpioDisableWakeUp();
+				//gpioDisableWakeUp();
 				setSleepRtcAlarm(sleepSeconds);
 			#endif
 
@@ -500,7 +411,7 @@ warpSetLowPowerMode(WarpPowerMode powerMode, uint32_t sleepSeconds)
 				 *	TODO: Need to test Warp variant of firmware on Glaux HW and see if
 				 *	we are able to wake from VLLS0.
 				 */
-				gpioDisableWakeUp();
+				//gpioDisableWakeUp();
 				setSleepRtcAlarm(sleepSeconds);
 			#endif
 
@@ -539,7 +450,7 @@ warpSetLowPowerMode(WarpPowerMode powerMode, uint32_t sleepSeconds)
 				 *	TODO: Need to test Warp variant of firmware on Glaux HW and see if
 				 *	we are able to wake from VLLS0.
 				 */
-				gpioDisableWakeUp();
+				//gpioDisableWakeUp();
 				setSleepRtcAlarm(sleepSeconds);
 			#endif
 

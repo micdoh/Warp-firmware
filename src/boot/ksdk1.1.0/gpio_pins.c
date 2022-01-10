@@ -142,6 +142,12 @@ gpio_output_pin_user_config_t	outputPins[] = {
 			.config.driveStrength = kPortLowDriveStrength,
 		},
 		*/
+        {
+                .pinName = kWarpPinMMA8451QINT2,
+                .config.outputLogic = 1,
+                .config.slewRate = kPortSlowSlewRate,
+                .config.driveStrength = kPortLowDriveStrength,
+        },
 	#else
 		{
 			.pinName = kGlauxPinLED,
@@ -181,6 +187,13 @@ gpio_output_pin_user_config_t	outputPins[] = {
  *	NOTE: The semantics is that pins that are excluded are disabled (TODO: double check).
  */
 gpio_input_pin_user_config_t	inputPins[] = {
+        {
+                .pinName = kWarpPinMMA8451QINT2,
+                .config.isPullEnable = true,
+                .config.pullSelect = kPortPullUp,
+                .config.isPassiveFilterEnabled = false,
+                .config.interrupt = kPortIntFallingEdge,
+        },
 	{
 		.pinName = GPIO_PINS_OUT_OF_RANGE,
 	}

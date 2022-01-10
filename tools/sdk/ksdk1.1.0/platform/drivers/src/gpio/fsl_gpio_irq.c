@@ -30,17 +30,26 @@
 
 #include <assert.h>
 #include "fsl_gpio_driver.h"
+#include "devMMA8451Q.h"
 
 /*******************************************************************************
  * Code
  ******************************************************************************/
 
 /* gpio IRQ handler with the same name in startup code. */
+//void PORTA_IRQHandler(void)
+//{
+    /* Clear interrupt flag.*/
+//    PORT_HAL_ClearPortIntFlag(PORTA_BASE);
+//}
+
 void PORTA_IRQHandler(void)
 {
-    /* Clear interrupt flag.*/
-    PORT_HAL_ClearPortIntFlag(PORTA_BASE);
+    readSensorRegisterMMA8451Q(0x00, 1); // Clear interrupt flag
+    PORT_HAL_ClearPortIntFlag(PORTA_BASE); // Lower interrupt pin
+    dataReady = 1;
 }
+
 
 #if defined (KL46Z4_SERIES)
 /* gpio IRQ handler with the same name in startup code. */

@@ -12,13 +12,14 @@
  *	The following taken from KSDK_1.1.0//boards/frdmkl03z/board.h. We
  *	don't include that whole file verbatim since we have a custom board.
  */
+/*
 #define BOARD_SW_HAS_LLWU_PIN		1
 #define BOARD_SW_LLWU_EXT_PIN		7
 #define BOARD_SW_LLWU_PIN		0
 #define BOARD_SW_LLWU_BASE		PORTA_BASE
 #define BOARD_SW_LLWU_IRQ_HANDLER	PORTA_IRQHandler
 #define BOARD_SW_LLWU_IRQ_NUM		PORTA_IRQn
-
+*/
 typedef enum
 {
 	kWarpStatusOK			= 0,
