@@ -189,7 +189,7 @@ readSensorRegisterMMA8451Q(uint8_t deviceRegister, int numberOfBytes)
 		.baudRate_kbps = gWarpI2cBaudRateKbps
 	};
 
-	//warpScaleSupplyVoltage(deviceMMA8451QState.operatingVoltageMillivolts);
+
 	cmdBuf[0] = deviceRegister;
 	warpEnableI2Cpins();
 

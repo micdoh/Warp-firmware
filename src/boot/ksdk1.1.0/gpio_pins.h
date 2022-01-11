@@ -40,25 +40,15 @@ enum _gpio_pins
 	kWarpPinEXTAL0				= GPIO_MAKE_PIN(HW_GPIOA, 3),	/*	PTA3: Reserved for EXTAL0	*/
 	kWarpPinXTAL0				= GPIO_MAKE_PIN(HW_GPIOA, 4),	/*	PTA4: Reserved for XTAL0	*/
 
-
-    //kWarpPinBGX_nRST		= GPIO_MAKE_PIN(HW_GPIOA, 5),
-
-
-	//kWarpPinSPI_MISO_UART_RTS		= GPIO_MAKE_PIN(HW_GPIOA, 6),
-	//kWarpPinSPI_MOSI_UART_CTS		= GPIO_MAKE_PIN(HW_GPIOA, 7),
-    kWarpPinSPI_MOSI			= GPIO_MAKE_PIN(HW_GPIOA, 8),
-
-
-    kWarpPinSPI_CK		= GPIO_MAKE_PIN(HW_GPIOA, 9),
-
-
-    kWarpPinSPI_DC             		= GPIO_MAKE_PIN(HW_GPIOB, 1),
-    kWarpPinMMA8451QINT2		    = GPIO_MAKE_PIN(HW_GPIOA, 12),
-
     kWarpPinSPI_R			        = GPIO_MAKE_PIN(HW_GPIOB, 0),
+    kWarpPinSPI_DC             		= GPIO_MAKE_PIN(HW_GPIOB, 1),
     i2cSCL                  		= GPIO_MAKE_PIN(HW_GPIOB, 3),
     i2cSDA                  		= GPIO_MAKE_PIN(HW_GPIOB, 4),
-    kWarpPinSPI_OC			= GPIO_MAKE_PIN(HW_GPIOB, 11),
+    kWarpPinSPI_OC			        = GPIO_MAKE_PIN(HW_GPIOB, 11),
+
+    kWarpPinSPI_MOSI			= GPIO_MAKE_PIN(HW_GPIOA, 8),
+    kWarpPinSPI_CK		        = GPIO_MAKE_PIN(HW_GPIOA, 9),
+    kWarpPinMMA8451QINT2		    = GPIO_MAKE_PIN(HW_GPIOA, 12),
 
 
     //kWarpPinSI4705_nRST		= GPIO_MAKE_PIN(HW_GPIOB, 2),

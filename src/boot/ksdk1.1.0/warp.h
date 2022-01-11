@@ -35,27 +35,23 @@ typedef enum
 
 	/*
 	 *	Power mode routines
-	 */
+
 	kWarpStatusPowerTransitionErrorVlpr2Wait,
 	kWarpStatusPowerTransitionErrorVlpr2Stop,
 	kWarpStatusPowerTransitionErrorRun2Vlpw,
 	kWarpStatusPowerTransitionErrorVlpr2Vlpr,
 	kWarpStatusErrorPowerSysSetmode,
 	kWarpStatusBadPowerModeSpecified,
-
+*/
 	/*
 	 *	Always keep this as the last item.
 	 */
 	kWarpStatusMax
 } WarpStatus;
-
+/*
 typedef enum
 {
-	/*
-	 *	NOTE: This order is depended on by POWER_SYS_SetMode()
-	 *
-	 *	See KSDK13APIRM.pdf Section 55.5.3
-	 */
+
 	kWarpPowerModeWAIT,
 	kWarpPowerModeSTOP,
 	kWarpPowerModeVLPR,
@@ -66,7 +62,7 @@ typedef enum
 	kWarpPowerModeVLLS3,
 	kWarpPowerModeRUN,
 } WarpPowerMode;
-
+*/
 typedef enum
 {
 	kWarpSensorMMA8451Q,
@@ -157,26 +153,23 @@ typedef struct
 	uint16_t		operatingVoltageMillivolts;
 } WarpSPIDeviceState;
 
-typedef struct
+/*typedef struct
 {
 	bool			isInitialized;
 	uint8_t			uartTXBuffer[kWarpSizesUartBufferBytes];
 	uint8_t			uartRXBuffer[kWarpSizesUartBufferBytes];
 	uint16_t		operatingVoltageMillivolts;
 } WarpUARTDeviceState;
-
+*/
 typedef struct
 {
 	uint8_t			errorCount;
 } WarpPowerManagerCallbackStructure;
 
-void		warpScaleSupplyVoltage(uint16_t voltageMillivolts);
-void		warpDisableSupplyVoltage(void);
-WarpStatus	warpSetLowPowerMode(WarpPowerMode powerMode, uint32_t sleepSeconds);
+
 void		warpEnableI2Cpins(void);
-void		warpDisableI2Cpins(void);
+
 void		warpEnableSPIpins(void);
-void		warpDisableSPIpins(void);
-void		warpDeasserAllSPIchipSelects(void);
+
 void		warpPrint(const char *fmt, ...);
-int		warpWaitKey(void);
+

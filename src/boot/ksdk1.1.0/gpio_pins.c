@@ -62,6 +62,18 @@ gpio_output_pin_user_config_t	outputPins[] = {
             .config.slewRate = kPortSlowSlewRate,
             .config.driveStrength = kPortLowDriveStrength,
         },
+        {
+            .pinName = i2cSCL,
+            .config.outputLogic = 1,
+            .config.slewRate = kPortSlowSlewRate,
+            .config.driveStrength = kPortLowDriveStrength,
+        },
+        {
+            .pinName = i2cSDA,
+            .config.outputLogic = 1,
+            .config.slewRate = kPortSlowSlewRate,
+            .config.driveStrength = kPortLowDriveStrength,
+        },
 
 	{
 		.pinName = GPIO_PINS_OUT_OF_RANGE,

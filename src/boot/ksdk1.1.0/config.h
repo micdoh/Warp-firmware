@@ -70,7 +70,7 @@ typedef enum
 	*/
 	kWarpDefaultPrintBufferSizeBytes			= 64,
 	kWarpMemoryCommonSpiBufferBytes				= 64,
-	kWarpSizesI2cBufferBytes				= 48, // 6x the FIFO sample watermark
+	kWarpSizesI2cBufferBytes				=48, // 6x the FIFO sample watermark
 	kWarpSizesSpiBufferBytes				= 7,
 	kWarpSizesUartBufferBytes				= 8,
 
@@ -103,6 +103,7 @@ typedef enum
     val_MMA8451Q_PULSE_THSX = 0x19, // Set X Threshold to 1.575g (LSB is 8g/127 = 0.063g)
     val_MMA8451Q_PULSE_THSY = 0x19, // Set Y Threshold to 1.575g
     val_MMA8451Q_PULSE_THSZ = 0x2A, // Set Z Threshold to 2.65g
+    //val_MMA8451Q_PULSE_THSZ = 0x19, // Set Z Threshold to 1.575g
     val_MMA8451Q_PULSE_TMLT = 0x50, // 50ms time limit for pulse to exceed threshold and drop below
     val_MMA8451Q_HP_FILTER_CUTOFF = 0b00010000, // Enable LPF for pulse detection
     val_MMA8451Q_PULSE_LTCY = 0xF0, // 300ms window until next pulse detected
