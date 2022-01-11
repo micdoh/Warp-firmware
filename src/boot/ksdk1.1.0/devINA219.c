@@ -19,7 +19,9 @@
 #include "SEGGER_RTT.h"
 #include "warp.h"
 
-extern volatile WarpI2CDeviceState	deviceINA219State;
+
+
+extern volatile INA219	        deviceINA219State;
 extern volatile uint32_t		gWarpI2cBaudRateKbps;
 extern volatile uint32_t		gWarpI2cTimeoutMilliseconds;
 extern volatile uint32_t		gWarpSupplySettlingDelayMilliseconds;
@@ -33,6 +35,7 @@ extern volatile uint32_t		gWarpSupplySettlingDelayMilliseconds;
 #define INA219_CALIBRATION		0x05
 #define INA219_CONFIG_DEFAULT	0x399F /* PGA=8 */
 
+
 void
 initINA219(const uint8_t i2cAddress, uint16_t operatingVoltageMillivolts)
 {
@@ -41,6 +44,7 @@ initINA219(const uint8_t i2cAddress, uint16_t operatingVoltageMillivolts)
 
 	return;
 }
+
 
 WarpStatus
 writeSensorRegisterINA219(uint8_t deviceRegister, uint16_t payload)

@@ -12,14 +12,6 @@
  *	The following taken from KSDK_1.1.0//boards/frdmkl03z/board.h. We
  *	don't include that whole file verbatim since we have a custom board.
  */
-/*
-#define BOARD_SW_HAS_LLWU_PIN		1
-#define BOARD_SW_LLWU_EXT_PIN		7
-#define BOARD_SW_LLWU_PIN		0
-#define BOARD_SW_LLWU_BASE		PORTA_BASE
-#define BOARD_SW_LLWU_IRQ_HANDLER	PORTA_IRQHandler
-#define BOARD_SW_LLWU_IRQ_NUM		PORTA_IRQn
-*/
 typedef enum
 {
 	kWarpStatusOK			= 0,
@@ -27,42 +19,12 @@ typedef enum
 	kWarpStatusDeviceNotInitialized,
 	kWarpStatusDeviceCommunicationFailed,
 	kWarpStatusBadDeviceCommand,
-
-	/*
-	 *	Generic comms error
-	 */
 	kWarpStatusCommsError,
 
-	/*
-	 *	Power mode routines
-
-	kWarpStatusPowerTransitionErrorVlpr2Wait,
-	kWarpStatusPowerTransitionErrorVlpr2Stop,
-	kWarpStatusPowerTransitionErrorRun2Vlpw,
-	kWarpStatusPowerTransitionErrorVlpr2Vlpr,
-	kWarpStatusErrorPowerSysSetmode,
-	kWarpStatusBadPowerModeSpecified,
-*/
-	/*
-	 *	Always keep this as the last item.
-	 */
 	kWarpStatusMax
 } WarpStatus;
-/*
-typedef enum
-{
 
-	kWarpPowerModeWAIT,
-	kWarpPowerModeSTOP,
-	kWarpPowerModeVLPR,
-	kWarpPowerModeVLPW,
-	kWarpPowerModeVLPS,
-	kWarpPowerModeVLLS0,
-	kWarpPowerModeVLLS1,
-	kWarpPowerModeVLLS3,
-	kWarpPowerModeRUN,
-} WarpPowerMode;
-*/
+
 typedef enum
 {
 	kWarpSensorMMA8451Q,
@@ -70,10 +32,12 @@ typedef enum
 	kWarpSensorINA219,
 } WarpSensorDevice;
 
+
 typedef enum
 {
 	kWarpModeDisableAdcOnSleep		= (1 << 0),
 } WarpModeMask;
+
 
 typedef enum
 {
@@ -84,7 +48,9 @@ typedef enum
     reg_L3GD20H_CTRL_4 = 0x23,
     reg_L3GD20H_CTRL_5 = 0x24,
     reg_L3GD20H_FIFO_CTRL = 0x2E,
+    reg_L3GD20H_FIFO_SRC = 0x2F, // Read only
 
+    reg_MMA8451Q_STATUS = 0x00,
     reg_MMA8451Q_CTRL_REG1 = 0x2A,
     reg_MMA8451Q_CTRL_REG2 = 0x2B,
     reg_MMA8451Q_CTRL_REG3 = 0x2C,
@@ -103,6 +69,7 @@ typedef enum
     reg_MMA8451Q_HP_FILTER_CUTOFF = 0x0F,
 
 } WarpSensorConfigurationRegister;
+
 
 typedef enum
 {
@@ -123,19 +90,12 @@ typedef enum
 
 } WarpSensorOutputRegister;
 
+
 typedef enum
 {
 	kWarpMiscMarkerForAbsentByte					= 0xFF,
 } WarpMisc;
 
-typedef struct
-{
-	bool			isInitialized;
-
-	uint8_t			i2cAddress;
-	uint8_t			i2cBuffer[kWarpSizesI2cBufferBytes];
-	uint16_t		operatingVoltageMillivolts;
-} WarpI2CDeviceState;
 
 typedef struct
 {
@@ -153,18 +113,35 @@ typedef struct
 	uint16_t		operatingVoltageMillivolts;
 } WarpSPIDeviceState;
 
-/*typedef struct
-{
-	bool			isInitialized;
-	uint8_t			uartTXBuffer[kWarpSizesUartBufferBytes];
-	uint8_t			uartRXBuffer[kWarpSizesUartBufferBytes];
-	uint16_t		operatingVoltageMillivolts;
-} WarpUARTDeviceState;
-*/
+
 typedef struct
 {
 	uint8_t			errorCount;
 } WarpPowerManagerCallbackStructure;
+
+
+typedef struct
+{
+    uint8_t     i2cAddress;
+    uint8_t     i2cBuffer[kWarpSizesI2cBufferBytesMMA8451Q];
+    uint16_t	operatingVoltageMillivolts;
+} MMA8451Q;
+
+
+typedef struct
+{
+    uint8_t     i2cAddress;
+    uint8_t     i2cBuffer[kWarpSizesI2cBufferBytesL3GD20H];
+    uint16_t	operatingVoltageMillivolts;
+} L3GD20H;
+
+
+typedef struct
+{
+    uint8_t     i2cAddress;
+    uint8_t     i2cBuffer[kWarpSizesI2cBufferBytesINA219];
+    uint16_t	operatingVoltageMillivolts;
+} INA219;
 
 
 void		warpEnableI2Cpins(void);

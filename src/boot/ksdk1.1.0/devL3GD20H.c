@@ -57,12 +57,12 @@
 #include "warp.h"
 
 
-extern volatile WarpI2CDeviceState	deviceL3GD20HState;
+
+
+extern volatile L3GD20H	        deviceL3GD20HState;
 extern volatile uint32_t		gWarpI2cBaudRateKbps;
 extern volatile uint32_t		gWarpI2cTimeoutMilliseconds;
 extern volatile uint32_t		gWarpSupplySettlingDelayMilliseconds;
-
-
 
 void
 initL3GD20H(const uint8_t i2cAddress, uint16_t operatingVoltageMillivolts)
@@ -129,6 +129,7 @@ configureSensorL3GD20H(void)
 {
 	WarpStatus	status1, status2, status3, status4, status5, status6;
 
+    writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_5, 0x80); // Reset
     status2 = writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_2, val_L3GD20H_CTRL_2);
     status3 = writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_3, val_L3GD20H_CTRL_3);
     status4 = writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_4, val_L3GD20H_CTRL_3);

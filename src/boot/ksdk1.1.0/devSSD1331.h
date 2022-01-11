@@ -43,8 +43,8 @@ typedef enum
 } SSD1331Commands;
 
 int	initSSD1331(void);
-int drawGlyph(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b, uint8_t glyph);
+int drawGlyph(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t brightness, uint8_t glyph);
 int clearScreen(void);
-int drawChar(uint8_t startCol, uint8_t startRow, uint8_t r, uint8_t g, uint8_t b, uint8_t * lines, uint8_t nLines, uint8_t weight);
-int drawMinus(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b);
-int drawPoint(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b);
+int drawChar(uint8_t startCol, uint8_t startRow, uint8_t brightness, uint8_t * lines, uint8_t nLines, uint8_t weight);
+int drawMinus(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t brightness);
+int drawPoint(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t brightness);

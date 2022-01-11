@@ -206,7 +206,7 @@ clearScreen(void){
 }
 
 int
-drawChar(uint8_t startCol, uint8_t startRow, uint8_t r, uint8_t g, uint8_t b, uint8_t * lines, uint8_t nLines, uint8_t weight){
+drawChar(uint8_t startCol, uint8_t startRow, uint8_t brightness, uint8_t * lines, uint8_t nLines, uint8_t weight){
     int j = 0;
     int i;
     int offset;
@@ -218,9 +218,9 @@ drawChar(uint8_t startCol, uint8_t startRow, uint8_t r, uint8_t g, uint8_t b, ui
             commands[j+2] = startRow - lines[i+1] + offset;
             commands[j+3] = startCol + lines[i+2] + offset;
             commands[j+4] = startRow - lines[i+3] + offset;
-            commands[j+5] = r;
-            commands[j+6] = g;
-            commands[j+7] = b;
+            commands[j+5] = brightness;
+            commands[j+6] = brightness;
+            commands[j+7] = brightness;
             j+=8;
         }
     }
@@ -229,27 +229,30 @@ drawChar(uint8_t startCol, uint8_t startRow, uint8_t r, uint8_t g, uint8_t b, ui
 }
 
 int
-drawPoint(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+drawPoint(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t brightness){
     uint8_t commands[11] = {
-            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale-(scale/4), startCol+(scale/4), startRow+scale+scale, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale-(scale/4), startCol+(scale/4), startRow+scale+scale,
+            brightness, brightness, brightness, brightness, brightness, brightness,
     };
     writeMultipleCommand(commands, 11);
     return 0;
 }
 
 int
-drawMinus(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+drawMinus(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t brightness){
     uint8_t commands[11] = {
-            kSSD1331CommandDRAWRECT, startCol+1, startRow+scale-1, startCol+scale-1, startRow+scale+1, r, g, b, 0, 0, 0,
+            kSSD1331CommandDRAWRECT, startCol+1, startRow+scale-1, startCol+scale-1, startRow+scale+1,
+            brightness, brightness, brightness, 0, 0, 0,
     };
     writeMultipleCommand(commands, 11);
     return 0;
 }
 
 int
-draw0(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+draw0(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t brightness){
     uint8_t commands[66] = {
-            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1,
+            brightness, brightness, brightness, brightness, brightness, brightness,
             kSSD1331CommandDRAWRECT, startCol+2, startRow+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0, // Top
             kSSD1331CommandDRAWRECT, startCol, startRow+scale+scale, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0, // Bottom
@@ -261,10 +264,10 @@ draw0(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, u
 }
 
 int
-draw1(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+draw1(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t brightness){
     uint8_t commands[33] = {
             kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, 0, 0, 0, 0, 0, 0,
-            kSSD1331CommandDRAWRECT, startCol+scale-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol+scale-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, brightness, brightness, brightness, brightness, brightness, brightness,
             kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0
     };
     writeMultipleCommand(commands, 33);
@@ -272,9 +275,9 @@ draw1(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, u
 }
 
 int
-draw2(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+draw2(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t brightness){
     uint8_t commands[88] = {
-            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, brightness, brightness, brightness, brightness, brightness, brightness,
             kSSD1331CommandDRAWRECT, startCol-1, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol+2, startRow+scale+2, startCol+scale+1, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,  // Top
@@ -288,9 +291,9 @@ draw2(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, u
 }
 
 int
-draw3(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+draw3(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t brightness){
     uint8_t commands[77] = {
-            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, brightness, brightness, brightness, brightness, brightness, brightness,
             kSSD1331CommandDRAWRECT, startCol-1, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,  // Top
@@ -303,9 +306,9 @@ draw3(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, u
 }
 
 int
-draw4(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+draw4(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t brightness){
     uint8_t commands[66] = {
-            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, brightness, brightness, brightness, brightness, brightness, brightness,
             kSSD1331CommandDRAWRECT, startCol+2, startRow-1, startCol+scale-2, startRow+scale-2, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale+1, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol, startRow+scale, startCol+scale, startRow+scale, 0, 0, 0, 0, 0, 0, // Middle
@@ -317,9 +320,9 @@ draw4(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, u
 }
 
 int
-draw5(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+draw5(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t brightness){
     uint8_t commands[88] = {
-            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, brightness, brightness, brightness, brightness, brightness, brightness,
             kSSD1331CommandDRAWRECT, startCol+2, startRow+2, startCol+scale+1, startRow+scale-2, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,  // Top
@@ -333,9 +336,9 @@ draw5(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, u
 }
 
 int
-draw6(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+draw6(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t brightness){
     uint8_t commands[88] = {
-            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, brightness, brightness, brightness, brightness, brightness, brightness,
             kSSD1331CommandDRAWRECT, startCol+2, startRow+2, startCol+scale+1, startRow+scale-2, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol+2, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,  // Top
@@ -349,9 +352,9 @@ draw6(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, u
 }
 
 int
-draw7(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+draw7(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t brightness){
     uint8_t commands[44] = {
-            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, brightness, brightness, brightness, brightness, brightness, brightness,
             kSSD1331CommandDRAWRECT, startCol-1, startRow+2, startCol+scale-2, startRow+scale+scale+1, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol+scale, startRow, startCol+scale, startRow+scale+scale, 0, 0, 0, 0, 0, 0
@@ -361,9 +364,9 @@ draw7(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, u
 }
 
 int
-draw8(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+draw8(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t brightness){
     uint8_t commands[88] = {
-            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, brightness, brightness, brightness, brightness, brightness, brightness,
             kSSD1331CommandDRAWRECT, startCol+2, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol+2, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,
@@ -377,9 +380,9 @@ draw8(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, u
 }
 
 int
-draw9(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b){
+draw9(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t brightness){
     uint8_t commands[88] = {
-            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, r, g, b, r, g, b,
+            kSSD1331CommandDRAWRECT, startCol-1, startRow-1, startCol+scale+1, startRow+scale+scale+1, brightness, brightness, brightness, brightness, brightness, brightness,
             kSSD1331CommandDRAWRECT, startCol+2, startRow+2, startCol+scale-2, startRow+scale-2, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol-1, startRow+scale+2, startCol+scale-2, startRow+scale+scale-2, 0, 0, 0, 0, 0, 0,
             kSSD1331CommandDRAWRECT, startCol, startRow, startCol+scale, startRow, 0, 0, 0, 0, 0, 0,
@@ -393,39 +396,39 @@ draw9(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, u
 }
 
 int
-drawGlyph(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t r, uint8_t g, uint8_t b, uint8_t glyph) {
+drawGlyph(uint8_t startCol, uint8_t startRow, uint8_t scale, uint8_t brightness, uint8_t glyph) {
 
     switch(glyph)
     {
         case 0:
-            draw0(startCol, startRow, scale, r, g, b);
+            draw0(startCol, startRow, scale, brightness);
             break;
         case 1:
-            draw1(startCol, startRow, scale, r, g, b);
+            draw1(startCol, startRow, scale, brightness);
             break;
         case 2:
-            draw2(startCol, startRow, scale, r, g, b);
+            draw2(startCol, startRow, scale, brightness);
             break;
         case 3:
-            draw3(startCol, startRow, scale, r, g, b);
+            draw3(startCol, startRow, scale, brightness);
             break;
         case 4:
-            draw4(startCol, startRow, scale, r, g, b);
+            draw4(startCol, startRow, scale, brightness);
             break;
         case 5:
-            draw5(startCol, startRow, scale, r, g, b);
+            draw5(startCol, startRow, scale, brightness);
             break;
         case 6:
-            draw6(startCol, startRow, scale, r, g, b);
+            draw6(startCol, startRow, scale, brightness);
             break;
         case 7:
-            draw7(startCol, startRow, scale, r, g, b);
+            draw7(startCol, startRow, scale, brightness);
             break;
         case 8:
-            draw8(startCol, startRow, scale, r, g, b);
+            draw8(startCol, startRow, scale, brightness);
             break;
         case 9:
-            draw9(startCol, startRow, scale, r, g, b);
+            draw9(startCol, startRow, scale, brightness);
             break;
         default:
             break;

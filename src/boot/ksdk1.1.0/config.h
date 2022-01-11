@@ -68,9 +68,11 @@ typedef enum
 	/*
 	 *	Sizes
 	*/
-	kWarpDefaultPrintBufferSizeBytes			= 64,
-	kWarpMemoryCommonSpiBufferBytes				= 64,
-	kWarpSizesI2cBufferBytes				=48, // 6x the FIFO sample watermark
+	kWarpDefaultPrintBufferSizeBytes		= 64,
+	kWarpMemoryCommonSpiBufferBytes			= 64,
+    kWarpSizesI2cBufferBytesINA219			= 2,  // Default
+    kWarpSizesI2cBufferBytesMMA8451Q		= 48, // 6x the FIFO sample watermark
+    kWarpSizesI2cBufferBytesL3GD20H         = 48, //192, // 8 samples
 	kWarpSizesSpiBufferBytes				= 7,
 	kWarpSizesUartBufferBytes				= 8,
 
@@ -91,21 +93,26 @@ typedef enum
     val_L3GD20H_CTRL_5 = 0b01000010, // Enable FIFO, enable LPF2 (20Hz cut-off)
     val_L3GD20H_FIFO_CTRL = 0b11000000, // FIFO dynamic stream mode, 32 sample threshold (default)
 
-    val_MMA8451Q_CTRL_REG1 = 0b00001101, // 400Hz, low noise (limited to +/-4g), active mode
+    val_MMA8451Q_CTRL_REG1 = 0b00001001, // 400Hz active mode
+    //val_MMA8451Q_CTRL_REG1 = 0b00001101, // 400Hz, low noise (limited to +/-4g), active mode
     val_MMA8451Q_CTRL_REG2 = 0b00000000, // Normal power mode
     val_MMA8451Q_CTRL_REG3 = 0b00000000, // No interrupt waking from sleep
+    //val_MMA8451Q_CTRL_REG4 = 0b11111111, // Enable FIFO interrupt
     val_MMA8451Q_CTRL_REG4 = 0b00001000, // Enable pulse interrupt
     val_MMA8451Q_CTRL_REG5 = 0b00000000, // Interrupts to INT2
     val_MMA8451Q_F_SETUP = 0b01000000, // FIFO circular buffer, 32 samples threshold (default)
-    val_MMA8451Q_TRIG_CFG = 0b01000000, // +/- 4g range
+    //val_MMA8451Q_F_SETUP = 0b01001000, // FIFO circular buffer, 8 samples threshold (default)
+    val_MMA8451Q_TRIG_CFG = 0b00000000, // No FIFO trigger
     val_MMA8451Q_XYZ_DATA_CFG = 0b00000001,  // No high-pass filter, +/-4g range
+    //val_MMA8451Q_XYZ_DATA_CFG = 0b00000000,  // No high-pass filter, +/-2g range
     val_MMA8451Q_PULSE_CFG = 0b00010101, // Single pulse enabled for z, y, x axes
     val_MMA8451Q_PULSE_THSX = 0x19, // Set X Threshold to 1.575g (LSB is 8g/127 = 0.063g)
-    val_MMA8451Q_PULSE_THSY = 0x19, // Set Y Threshold to 1.575g
+    val_MMA8451Q_PULSE_THSY = 0x19, // 0x019 Set Y Threshold to 1.575g
     val_MMA8451Q_PULSE_THSZ = 0x2A, // Set Z Threshold to 2.65g
     //val_MMA8451Q_PULSE_THSZ = 0x19, // Set Z Threshold to 1.575g
-    val_MMA8451Q_PULSE_TMLT = 0x50, // 50ms time limit for pulse to exceed threshold and drop below
-    val_MMA8451Q_HP_FILTER_CUTOFF = 0b00010000, // Enable LPF for pulse detection
+    val_MMA8451Q_PULSE_TMLT = 0xFF, // 0x50 50ms time limit for pulse to exceed threshold and drop below
+    //val_MMA8451Q_HP_FILTER_CUTOFF = 0b00010000, // Enable LPF for pulse detection
+    val_MMA8451Q_HP_FILTER_CUTOFF = 0b00000000, // Disable LPF for pulse detection
     val_MMA8451Q_PULSE_LTCY = 0xF0, // 300ms window until next pulse detected
 
 

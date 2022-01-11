@@ -57,7 +57,7 @@
 #include "warp.h"
 
 
-extern volatile WarpI2CDeviceState	deviceMMA8451QState;
+extern volatile MMA8451Q	    deviceMMA8451QState;
 extern volatile uint32_t		gWarpI2cBaudRateKbps;
 extern volatile uint32_t		gWarpI2cTimeoutMilliseconds;
 extern volatile uint32_t		gWarpSupplySettlingDelayMilliseconds;
@@ -131,6 +131,7 @@ configureSensorMMA8451Q(uint8_t payloadF_SETUP, uint8_t payloadCTRL_REG1, uint8_
 {
     WarpStatus	status;
 
+    writeSensorRegisterMMA8451Q(reg_MMA8451Q_CTRL_REG2,0x40); // Reset
     writeSensorRegisterMMA8451Q(reg_MMA8451Q_CTRL_REG1,val_MMA8451Q_CTRL_REG1);
     writeSensorRegisterMMA8451Q(reg_MMA8451Q_CTRL_REG2,val_MMA8451Q_CTRL_REG2);
     writeSensorRegisterMMA8451Q(reg_MMA8451Q_CTRL_REG3,val_MMA8451Q_CTRL_REG3);
@@ -395,6 +396,9 @@ convertFromRawMMA8451Q(int16_t raw, uint8_t * digits) {
         raw = raw << 1;
         digit = (raw & 0x7000) >> 13; // Get first digit
         raw = raw << 3;
+    //raw = raw << 1;
+    //digit = (raw & 0x4000) >> 12; // Get first digit
+    //raw = raw << 2;
         
     for (i = 0; i < 12; i++) {
         if ((raw & 0x8000) == 0x8000) {
