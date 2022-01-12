@@ -85,11 +85,11 @@ char							    gWarpPrintBuffer[kWarpDefaultPrintBufferSizeBytes];
 uint8_t							    gWarpSpiCommonSourceBuffer[kWarpMemoryCommonSpiBufferBytes];
 uint8_t							    gWarpSpiCommonSinkBuffer[kWarpMemoryCommonSpiBufferBytes];
 
-volatile bool dataReady = false;
+volatile bool tap = false;
+volatile uint8_t tapCount = 0;
 const uint8_t nSamplesL3GD20H = kWarpSizesI2cBufferBytesL3GD20H/6;
 const uint8_t nSamplesMMA8451Q = kWarpSizesI2cBufferBytesMMA8451Q/6;
 int16_t readingsMMA8451QFIFO[kWarpSizesI2cBufferBytesMMA8451Q/2];
-//int16_t readingsMMA8451QFIFO[8];
 int16_t readingsL3GD20HFIFO[kWarpSizesI2cBufferBytesL3GD20H/2];
 uint8_t statusRegisterValueGyro, statusRegisterValueAccel;
 int16_t zeroRateGyroX = 0, zeroRateGyroY = 0, zeroRateGyroZ = 0;
@@ -102,6 +102,7 @@ uint32_t currTime, timeStart;
 uint8_t digits[6] = {0, 0, 0, 0, 0, 0};
 uint8_t digitsPrev[6] = {1, 9, 9, 9, 9, 9};
 uint16_t sampleCount = 0;
+
 
 
 
@@ -297,7 +298,7 @@ void
 PORTA_IRQHandler(void)
 {
     PORT_HAL_ClearPortIntFlag(PORTA_BASE); // Lower interrupt pin
-    dataReady = 1;
+    tap = true;
 }
 
 
@@ -308,7 +309,7 @@ iterativeAvg(int16_t prev_avg, int16_t cur_elem, uint8_t n) {
     return result;
 }
 
-
+// From https://gist.github.com/foobaz/3287f153d125277eefea
 uint16_t
 gapsqrt32(uint32_t a) {
     uint32_t rem = 0, root = 0;
@@ -341,9 +342,11 @@ getRmsXyz(int16_t x, int16_t y, int16_t z) {
 int16_t
 getGradient(int16_t x, int16_t y, int16_t z) {
     int16_t     result;
-    uint16_t     rms;
+    uint16_t    rms;
+    int16_t    aRes;
 
     rms = getRmsXyz(x, y, z);
+    aRes = 4096 - rms;
     result = rms;
     return result;
 }
@@ -454,9 +457,9 @@ main(void) {
 
         readSensorRegisterL3GD20H(reg_L3GD20H_FIFO_SRC, 1);
         statusRegisterValueGyro = deviceL3GD20HState.i2cBuffer[0];
-
+        warpPrint("Gyro %d\n", statusRegisterValueGyro);
         if ((statusRegisterValueGyro & 0b11000000) > 0) {
-            warpPrint("Gyro %d\n", statusRegisterValueGyro);
+
             returnSensorDataL3GD20HFIFO(readingsL3GD20HFIFO, kWarpSizesI2cBufferBytesL3GD20H);
             k = 0;
 
@@ -476,9 +479,9 @@ main(void) {
 
         readSensorRegisterMMA8451Q(reg_MMA8451Q_STATUS, 1);
         statusRegisterValueAccel = deviceMMA8451QState.i2cBuffer[0];
-
+        warpPrint("Accel %d\n", statusRegisterValueAccel);
         if ((statusRegisterValueAccel & 0b11000000) > 0) {
-            warpPrint("Accel %d\n", statusRegisterValueAccel);
+
             returnSensorDataMMA8451QFIFO(readingsMMA8451QFIFO, kWarpSizesI2cBufferBytesMMA8451Q);
             k = 0;
 
@@ -511,16 +514,28 @@ main(void) {
 
     while (1) {
 
-        if (dataReady) {
+        if (tap) {
+            tapCount++;
+            tapCount %= 3;
             readSensorRegisterMMA8451Q(reg_MMA8451Q_STATUS, 1);
             readSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_SRC, 1); // Clear interrupt flag
-            warpPrint("READY\n");
+            warpPrint("TAP\n");
+            tap = false;
         }
-        //statusRegisterValueAccel = readSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_SRC, 1); // Clear interrupt flag
-
-        //warpPrint("%d\n", statusRegisterValueAccel);
 
         currTime = OSA_TimeGetMsec();
+
+        switch(tapCount) {
+
+            case 1: // Gradient only
+                break;
+
+            case 2: // Cadence only
+                break;
+
+            default: // Both
+                break;
+        }
 
         readSensorRegisterMMA8451Q(reg_MMA8451Q_STATUS, 1);
         statusRegisterValueAccel = deviceMMA8451QState.i2cBuffer[0];

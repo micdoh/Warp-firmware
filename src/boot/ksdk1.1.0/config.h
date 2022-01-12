@@ -93,8 +93,8 @@ typedef enum
     val_L3GD20H_CTRL_5 = 0b01000010, // Enable FIFO, enable LPF2 (20Hz cut-off)
     val_L3GD20H_FIFO_CTRL = 0b11000000, // FIFO dynamic stream mode, 32 sample threshold (default)
 
-    val_MMA8451Q_CTRL_REG1 = 0b00001001, // 400Hz active mode
-    //val_MMA8451Q_CTRL_REG1 = 0b00001101, // 400Hz, low noise (limited to +/-4g), active mode
+    //val_MMA8451Q_CTRL_REG1 = 0b00001001, // 400Hz active mode
+    val_MMA8451Q_CTRL_REG1 = 0b00001101, // 400Hz, low noise (limited to +/-4g), active mode
     val_MMA8451Q_CTRL_REG2 = 0b00000000, // Normal power mode
     val_MMA8451Q_CTRL_REG3 = 0b00000000, // No interrupt waking from sleep
     //val_MMA8451Q_CTRL_REG4 = 0b11111111, // Enable FIFO interrupt
@@ -113,7 +113,7 @@ typedef enum
     val_MMA8451Q_PULSE_TMLT = 0xFF, // 0x50 50ms time limit for pulse to exceed threshold and drop below
     //val_MMA8451Q_HP_FILTER_CUTOFF = 0b00010000, // Enable LPF for pulse detection
     val_MMA8451Q_HP_FILTER_CUTOFF = 0b00000000, // Disable LPF for pulse detection
-    val_MMA8451Q_PULSE_LTCY = 0xF0, // 300ms window until next pulse detected
+    val_MMA8451Q_PULSE_LTCY = 0x50, // 300ms window until next pulse detected
 
 
 } WarpDefaults;
