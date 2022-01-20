@@ -88,7 +88,8 @@ typedef enum
      */
     val_L3GD20H_CTRL_1 = 0b10001111, // ODR 400Hz, 20Hz LPF cut-off, see table 21, normal mode, x,y,z enable
     val_L3GD20H_CTRL_2 = 0b00000000, // No HPF
-    val_L3GD20H_CTRL_3 = 0b00000000, // No interrupt
+    //val_L3GD20H_CTRL_3 = 0b00000000, // No interrupt
+    val_L3GD20H_CTRL_3 = 0b00001000, // DRDY interrupt
     val_L3GD20H_CTRL_4 = 0b10000000, // Block data update
     val_L3GD20H_CTRL_5 = 0b01000010, // Enable FIFO, enable LPF2 (20Hz cut-off)
     val_L3GD20H_FIFO_CTRL = 0b11000000, // FIFO dynamic stream mode, 32 sample threshold (default)

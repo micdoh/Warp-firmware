@@ -403,15 +403,6 @@ main(void) {
      */
     lowPowerPinStates();
 
-    /*
-     *	At this point, we consider the system "booted" and, e.g., warpPrint()s
-     *	will also be sent to the BLE if that is compiled in.
-     */
-    //gWarpBooted = true;
-
-    PORT_HAL_SetMuxMode(PORTA_BASE, 12, kPortMuxAsGpio);
-    PORT_HAL_SetPinIntMode(PORTA_BASE, 12, kPortIntFallingEdge);
-
     // Initialise sensors and screen
     initMMA8451Q(0x1D, kWarpDefaultSupplyVoltageMillivoltsMMA8451Q);
     OSA_TimeDelay(100);
