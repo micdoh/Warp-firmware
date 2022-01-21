@@ -48,9 +48,10 @@ typedef enum
     reg_L3GD20H_CTRL_4 = 0x23,
     reg_L3GD20H_CTRL_5 = 0x24,
     reg_L3GD20H_FIFO_CTRL = 0x2E,
-    reg_L3GD20H_FIFO_SRC = 0x2F, // Read only
+    reg_L3GD20H_FIFO_SRC = 0x2F, // Read-only
 
     reg_MMA8451Q_STATUS = 0x00,
+    reg_MMA8451Q_INT_SOURCE = 0x0C, // Read-only
     reg_MMA8451Q_CTRL_REG1 = 0x2A,
     reg_MMA8451Q_CTRL_REG2 = 0x2B,
     reg_MMA8451Q_CTRL_REG3 = 0x2C,
@@ -60,7 +61,7 @@ typedef enum
     reg_MMA8451Q_TRIG_CFG = 0x0A,
     reg_MMA8451Q_XYZ_DATA_CFG = 0x0E,
     reg_MMA8451Q_PULSE_CFG = 0x21,
-    reg_MMA8451Q_PULSE_SRC = 0x21, // Read only
+    reg_MMA8451Q_PULSE_SRC = 0x22, // Read-only
     reg_MMA8451Q_PULSE_THSX = 0x23,
     reg_MMA8451Q_PULSE_THSY = 0x24,
     reg_MMA8451Q_PULSE_THSZ = 0x25,

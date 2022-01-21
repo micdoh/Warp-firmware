@@ -98,8 +98,10 @@ typedef enum
     val_MMA8451Q_CTRL_REG1 = 0b00001101, // 400Hz, low noise (limited to +/-4g), active mode
     val_MMA8451Q_CTRL_REG2 = 0b00000000, // Normal power mode
     val_MMA8451Q_CTRL_REG3 = 0b00000000, // No interrupt waking from sleep
-    //val_MMA8451Q_CTRL_REG4 = 0b11111111, // Enable FIFO interrupt
-    val_MMA8451Q_CTRL_REG4 = 0b00001000, // Enable pulse interrupt
+    //val_MMA8451Q_CTRL_REG3 = 0b00000011, // Interrupt HIGH and OPEN DRAIN
+    val_MMA8451Q_CTRL_REG4 = 0b11111111, // Enable all interrupts
+    //val_MMA8451Q_CTRL_REG4 = 0b00000001, // Enable DRDY interrupt
+    //val_MMA8451Q_CTRL_REG4 = 0b00001000, // Enable pulse interrupt
     val_MMA8451Q_CTRL_REG5 = 0b00000000, // Interrupts to INT2
     val_MMA8451Q_F_SETUP = 0b01000000, // FIFO circular buffer, 32 samples threshold (default)
     //val_MMA8451Q_F_SETUP = 0b01001000, // FIFO circular buffer, 8 samples threshold (default)
@@ -111,7 +113,7 @@ typedef enum
     val_MMA8451Q_PULSE_THSY = 0x19, // 0x019 Set Y Threshold to 1.575g
     val_MMA8451Q_PULSE_THSZ = 0x2A, // Set Z Threshold to 2.65g
     //val_MMA8451Q_PULSE_THSZ = 0x19, // Set Z Threshold to 1.575g
-    val_MMA8451Q_PULSE_TMLT = 0xFF, // 0x50 50ms time limit for pulse to exceed threshold and drop below
+    val_MMA8451Q_PULSE_TMLT = 0x50, // 0x50 50ms time limit for pulse to exceed threshold and drop below
     //val_MMA8451Q_HP_FILTER_CUTOFF = 0b00010000, // Enable LPF for pulse detection
     val_MMA8451Q_HP_FILTER_CUTOFF = 0b00000000, // Disable LPF for pulse detection
     val_MMA8451Q_PULSE_LTCY = 0x50, // 300ms window until next pulse detected

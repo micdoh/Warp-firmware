@@ -225,8 +225,8 @@ lowPowerPinStates(void)
     /*
      * Configure PTA12 for interrupt on falling edge
      */
-    PORT_HAL_SetMuxMode(PORTA_BASE, 12, kPortMuxAsGpio);
-    PORT_HAL_SetPinIntMode(PORTA_BASE, 12, kPortIntEitherEdge);//kPortIntFallingEdge);
+    PORT_HAL_SetMuxMode(PORTA_BASE, 12, kPortMuxAlt3);//kPortMuxAsGpio);
+    PORT_HAL_SetPinIntMode(PORTA_BASE, 12, kPortIntRisingEdge);//kPortIntEitherEdge);
 
 
     /*
@@ -502,18 +502,26 @@ main(void) {
     //warpPrint("sampleCount, xGyro, yGyro, zGyro\n");
     timeStart = OSA_TimeGetMsec();
     drawPoint(35, 25, 8, 255);
+    volatile uint8_t statusRegisterPulse;
+    volatile uint8_t statusRegisterInt;
 
     while (1) {
 
         if (tap) {
             tapCount++;
             tapCount %= 3;
-            readSensorRegisterMMA8451Q(reg_MMA8451Q_STATUS, 1);
             readSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_SRC, 1); // Clear interrupt flag
+            statusRegisterPulse = deviceMMA8451QState.i2cBuffer[0];
+            readSensorRegisterMMA8451Q(reg_MMA8451Q_INT_SOURCE, 1);
+            statusRegisterInt = deviceMMA8451QState.i2cBuffer[0];
             warpPrint("TAP\n");
+            warpPrint("%d\n", statusRegisterPulse);
             tap = false;
         }
-
+        readSensorRegisterMMA8451Q(reg_MMA8451Q_INT_SOURCE, 1);
+        statusRegisterInt = deviceMMA8451QState.i2cBuffer[0];
+        readSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_SRC, 1); // Clear interrupt flag
+        statusRegisterPulse = deviceMMA8451QState.i2cBuffer[0];
         currTime = OSA_TimeGetMsec();
 
         switch(tapCount) {
