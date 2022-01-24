@@ -339,18 +339,100 @@ getRmsXyz(int16_t x, int16_t y, int16_t z) {
 }
 
 
-int16_t
-getGradient(int16_t x, int16_t y, int16_t z) {
-    int16_t     result;
+/*
+ * Source: https://www.nullhardware.com/blog/fixed-point-sine-and-cosine-for-embedded-systems/
+Implements the 5-order polynomial approximation to sin(x).
+@param i   angle (with 2^15 units/circle)
+@return    16 bit fixed point Sine value (4.12) (ie: +4096 = +1 & -4096 = -1)
+
+The result is accurate to within +- 1 count. ie: +/-2.44e-4.
+*/
+int16_t fpsin(int16_t i)
+{
+    /* Convert (signed) input to a value between 0 and 8192. (8192 is pi/2, which is the region of the curve fit). */
+    /* ------------------------------------------------------------------- */
+    i <<= 1;
+    uint8_t c = i<0; //set carry for output pos/neg
+
+    if(i == (i|0x4000)) // flip input value to corresponding value in range [0..8192)
+        i = (1<<15) - i;
+    i = (i & 0x7FFF) >> 1;
+    /* ------------------------------------------------------------------- */
+
+    /* The following section implements the formula:
+     = y * 2^-n * ( A1 - 2^(q-p)* y * 2^-n * y * 2^-n * [B1 - 2^-r * y * 2^-n * C1 * y]) * 2^(a-q)
+    Where the constants are defined as follows:
+    */
+    enum {A1=3370945099UL, B1=2746362156UL, C1=292421UL};
+    enum {n=13, p=32, q=31, r=3, a=12};
+
+    uint32_t y = (C1*((uint32_t)i))>>n;
+    y = B1 - (((uint32_t)i*y)>>r);
+    y = (uint32_t)i * (y>>n);
+    y = (uint32_t)i * (y>>n);
+    y = A1 - (y>>(p-q));
+    y = (uint32_t)i * (y>>n);
+    y = (y+(1UL<<(q-a-1)))>>(q-a); // Rounding
+
+    return c ? -y : y;
+}
+
+//Cos(x) = sin(x + pi/2)
+#define fpcos(i) fpsin((int16_t)(((uint16_t)(i)) + 8192U))
+
+// *********************************************************
+// ***
+// ***   Routines to compute arctangent to 6.6 digits
+// ***  of accuracy.
+// ***  Source: http://www.ganssle.com/approx/sincos.cpp
+// *********************************************************
+//
+//		atan_66s computes atan(x)
+//
+//  Accurate to about 6.6 decimal digits over the range [0, pi/12].
+//
+//  Algorithm:
+//		atan(x)= x(c1 + c2*x**2)/(c3 + x**2)
+//
+//  Arcsine(x)	 = atan(x/√(1-x2))
+//  Arccosine(x) = Π/2 - arcsine(x)
+//               = Π/2 - atan(x/√(1-x2))
+//
+/*
+float atan_66s(double x)
+{
+    const float c1=1.6867629106;
+    const float c2=0.4378497304;
+    const float c3=1.6867633134;
+    float x2;							// The input argument squared
+
+    x2=x * x;
+    float (x*(c1 + x2*c2)/(c3 + x2));
+}
+ */
+
+// TODO - Find appropriate fixed point acos() solution and implement
+int
+getGradient(int16_t x, int16_t y, int16_t z, uint8_t * display_digits) {
     uint16_t    rms;
-    int16_t    aRes;
+    int16_t     aRes;
+    uint16_t    gradient_rads;
+
+    // Check if x-axis acceleration is
+    //    positive (downhill)
+    // or negative (uphill)
+    if (x < 0) {
+        digits[0] = 1;
+    }
+
+    gradient_rads =
 
     rms = getRmsXyz(x, y, z);
     aRes = 4096 - rms;
-    result = rms;
-    return result;
+    return 0;
 }
 
+// TODO - Find the best method of routing the
 
 int
 main(void) {
@@ -432,6 +514,8 @@ main(void) {
     drawChar(60, 50, 255, linesd, 4, 2);
     drawChar(73, 50, 255, linese, 7,2);
 
+    uint8_t linesG[8] = {0, 0, 0, 20, 0, 0, 10, 0};
+
     status = configureSensorMMA8451Q();
     if (status != kWarpStatusOK) {
        warpPrint("\rMMA8451Q configuration failed...\n");
@@ -488,7 +572,7 @@ main(void) {
     }
     int8_t X_OFFSET = (zeroRateAccelX/8) * 1;
     int8_t Y_OFFSET = (zeroRateAccelY/8) * 1;
-    int8_t Z_OFFSET = ((4096-zeroRateAccelZ)/8) * 1;
+    int8_t Z_OFFSET = ((2098-zeroRateAccelZ)/8) * 1;
     warpPrint("ZERO: %d, %d, %d\n", zeroRateAccelX, zeroRateAccelY, zeroRateAccelZ);
     warpPrint("OFFSETS: %d, %d, %d\n", X_OFFSET, Y_OFFSET, Z_OFFSET);
     writeSensorRegisterMMA8451Q(reg_MMA8451Q_CTRL_REG1, 0x00); // Standby
@@ -570,6 +654,7 @@ main(void) {
         }
 
         if (currTime - timeStart >= 1000) {
+            warpPrint("%d\n", zAccel);
             convertFromRawMMA8451Q(zAccel, digits);
             if (digitsPrev[0] != digits[0]) {
                 if (digits[0] == 1) {

@@ -380,23 +380,24 @@ returnSensorDataMMA8451QFIFO(int16_t * readings, uint8_t nBytes)
 
 
 int
-convertFromRawMMA8451Q(uint16_t raw, uint8_t * digits) {
+convertFromRawMMA8451Q(int16_t raw, uint8_t * digits) {
     uint8_t sign = 0;
     uint8_t digit;
     uint16_t fracDigits = 0;
     uint16_t frac = 5000;
     int i;
 
-    //if (raw < 0) {
-    if ((raw & 0x8000) == 0x8000) {
+    if (raw < 0) {
+    //if ((raw & 0x8000) == 0x8000) {
         sign = 1;  // Indicates negative number
         raw &= 0xFFFC;
         raw = (~raw) + 1;
     }
-    
-        raw = raw << 1;
-        digit = (raw & 0x7000) >> 13; // Get first digit
-        raw = raw << 3;
+    warpPrint("Raw: %d\n", raw);
+    raw = raw << 2;
+    digit = (raw & 0x6000) >> 13; // Get first digit
+    raw = raw << 3;
+    warpPrint("Raw 3: %d\n", raw);
     //raw = raw << 1;
     //digit = (raw & 0x4000) >> 12; // Get first digit
     //raw = raw << 2;
@@ -407,6 +408,7 @@ convertFromRawMMA8451Q(uint16_t raw, uint8_t * digits) {
         }
         frac = (frac+1) / 2;
         raw = raw << 1;
+        warpPrint("Raw x: %d\n", raw);
     }
     
     digits[0] = sign;
