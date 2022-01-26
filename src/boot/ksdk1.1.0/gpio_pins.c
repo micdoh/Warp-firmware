@@ -106,6 +106,13 @@ gpio_input_pin_user_config_t	inputPins[] = {
                 .config.isPassiveFilterEnabled = false,
                 .config.interrupt = kPortIntRisingEdge,
         },
+        {
+                .pinName = kWarpPinL3GD20HINTDRDY,
+                .config.isPullEnable = true,
+                .config.pullSelect = kPortPullDown, // TODO - Try kPortPullUp
+                .config.isPassiveFilterEnabled = false,
+                .config.interrupt = kPortIntRisingEdge,
+        },
 	{
 		.pinName = GPIO_PINS_OUT_OF_RANGE,
 	}

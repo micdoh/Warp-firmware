@@ -127,17 +127,20 @@ writeSensorRegisterL3GD20H(uint8_t deviceRegister, uint8_t payload)//, uint16_t 
 WarpStatus
 configureSensorL3GD20H(void)
 {
-	WarpStatus	status1, status2, status3, status4, status5, status6;
+	WarpStatus	status1, status2, status3, status4, status5, status6, status7;
 
     writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_5, 0x80); // Reset
+    writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_1, 0b00001000); // Sleep mode
     status2 = writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_2, val_L3GD20H_CTRL_2);
     status3 = writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_3, val_L3GD20H_CTRL_3);
     status4 = writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_4, val_L3GD20H_CTRL_3);
     status5 = writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_5, val_L3GD20H_CTRL_5);
     status6 = writeSensorRegisterL3GD20H(reg_L3GD20H_FIFO_CTRL, val_L3GD20H_FIFO_CTRL);
+    status7 = writeSensorRegisterL3GD20H(reg_L3GD20H_LOW_ODR, val_L3GD20H_LOW_ODR);
+
     status1 = writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_1, val_L3GD20H_CTRL_1);
 
-	return (status1 | status2 | status3 | status4 | status5 | status6);
+	return (status1 | status2 | status3 | status4 | status5 | status6 | status7);
 }
 
 WarpStatus
