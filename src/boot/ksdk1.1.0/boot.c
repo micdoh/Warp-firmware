@@ -43,7 +43,6 @@
 
 #include "config.h"
 
-
 #include "fsl_misc_utilities.h"
 #include "fsl_device_registers.h"
 #include "fsl_i2c_master_driver.h"
@@ -61,26 +60,23 @@
 #include "devINA219.h"
 #include "devMMA8451Q.h"
 #include "devL3GD20H.h"
-volatile L3GD20H		deviceL3GD20HState;
-volatile INA219		deviceINA219State;
-volatile MMA8451Q		deviceMMA8451QState;
+#include "sin1.h"
 
 #define							kWarpConstantStringI2cFailure		"\rI2C failed"
 #define							kWarpConstantStringErrorInvalidVoltage	"\rInvalid V"
 #define							kWarpConstantStringErrorSanity		"\rCheck fail"
 
+volatile L3GD20H		            deviceL3GD20HState;
+volatile INA219		                deviceINA219State;
+volatile MMA8451Q		            deviceMMA8451QState;
+
 volatile i2c_master_state_t			i2cMasterState;
 volatile spi_master_state_t			spiMasterState;
 volatile spi_master_user_config_t	spiUserConfig;
 
-//volatile bool						gWarpBooted				                = false;
-const uint32_t					gWarpI2cBaudRateKbps			        = kWarpDefaultI2cBaudRateKbps;
-const uint32_t					gWarpSpiBaudRateKbps			        = kWarpDefaultSpiBaudRateKbps;
-//volatile uint32_t					gWarpSleeptimeSeconds			        = kWarpDefaultSleeptimeSeconds;
-const uint32_t					gWarpI2cTimeoutMilliseconds		        = kWarpDefaultI2cTimeoutMilliseconds;
-//volatile uint32_t					gWarpSpiTimeoutMicroseconds		        = kWarpDefaultSpiTimeoutMicroseconds;
-//volatile uint32_t					gWarpMenuPrintDelayMilliseconds		    = kWarpDefaultMenuPrintDelayMilliseconds;
-//volatile uint32_t					gWarpSupplySettlingDelayMilliseconds	= kWarpDefaultSupplySettlingDelayMilliseconds;
+const uint32_t					    gWarpI2cBaudRateKbps			        = kWarpDefaultI2cBaudRateKbps;
+const uint32_t					    gWarpSpiBaudRateKbps			        = kWarpDefaultSpiBaudRateKbps;
+const uint32_t					    gWarpI2cTimeoutMilliseconds		        = kWarpDefaultI2cTimeoutMilliseconds;
 char							    gWarpPrintBuffer[kWarpDefaultPrintBufferSizeBytes];
 uint8_t							    gWarpSpiCommonSourceBuffer[kWarpMemoryCommonSpiBufferBytes];
 uint8_t							    gWarpSpiCommonSinkBuffer[kWarpMemoryCommonSpiBufferBytes];
@@ -99,13 +95,14 @@ uint8_t i;
 uint8_t j;
 uint8_t k;
 uint32_t currTime, timeStart;
+uint8_t gradDigits[5] = {0, 0, 0, 0, 0};
+uint8_t gradDigitsPrev[5] = {1, 9, 9, 9, 9};
 uint8_t digits[6] = {0, 0, 0, 0, 0, 0};
 uint8_t digitsPrev[6] = {1, 9, 9, 9, 9, 9};
 uint16_t sampleCount = 0;
 
-
-
-
+int16_t sin1(int16_t angle);
+int16_t cos1(int16_t angle);
 static void					   lowPowerPinStates(void);
 int16_t                        iterativeAvg(int16_t prev_avg, int16_t cur_elem, uint8_t n);
 uint16_t                       gapsqrt32(uint32_t a);
@@ -113,6 +110,106 @@ uint16_t                       getRmsXyz(int16_t x, int16_t y, int16_t z);
 //WarpStatus						writeByteToI2cDeviceRegister(uint8_t i2cAddress, bool sendCommandByte, uint8_t commandByte, bool sendPayloadByte, uint8_t payloadByte);
 //WarpStatus						writeBytesToSpi(uint8_t *  payloadBytes, int payloadLength);
 //void							warpLowPowerSecondsSleep(uint32_t sleepSeconds, bool forceAllPinsIntoLowPowerState);
+
+
+
+
+
+/**
+ * Example for a sine/cosine table lookup
+ * Implementation of sin1() / cos1().
+ * We "outsource" this implementation so that the precompiler constants/macros
+ * are only defined here.
+ *
+ * @file sin1.c
+ * @author stfwi
+ **/
+
+#include "sin1.h"
+
+/*
+ * The number of bits of our data type: here 16 (sizeof operator returns bytes).
+ */
+#define INT16_BITS  (8 * sizeof(int16_t))
+#ifndef INT16_MAX
+#define INT16_MAX   ((1<<(INT16_BITS-1))-1)
+#endif
+
+/*
+ * "5 bit" large table = 32 values. The mask: all bit belonging to the table
+ * are 1, the all above 0.
+ */
+#define TABLE_BITS  (5)
+#define TABLE_SIZE  (1<<TABLE_BITS)
+#define TABLE_MASK  (TABLE_SIZE-1)
+
+/*
+ * The lookup table is to 90DEG, the input can be -360 to 360 DEG, where negative
+ * values are transformed to positive before further processing. We need two
+ * additional bits (*4) to represent 360 DEG:
+ */
+#define LOOKUP_BITS (TABLE_BITS+2)
+#define LOOKUP_MASK ((1<<LOOKUP_BITS)-1)
+#define FLIP_BIT    (1<<TABLE_BITS)
+#define NEGATE_BIT  (1<<(TABLE_BITS+1))
+#define INTERP_BITS (INT16_BITS-1-LOOKUP_BITS)
+#define INTERP_MASK ((1<<INTERP_BITS)-1)
+
+/**
+ * "5 bit" lookup table for the offsets. These are the sines for exactly
+ * at 0deg, 11.25deg, 22.5deg etc. The values are from -1 to 1 in Q15.
+ */
+static int16_t sin90[TABLE_SIZE+1] = {
+        0x0000,0x0647,0x0c8b,0x12c7,0x18f8,0x1f19,0x2527,0x2b1e,
+        0x30fb,0x36b9,0x3c56,0x41cd,0x471c,0x4c3f,0x5133,0x55f4,
+        0x5a81,0x5ed6,0x62f1,0x66ce,0x6a6c,0x6dc9,0x70e1,0x73b5,
+        0x7640,0x7883,0x7a7c,0x7c29,0x7d89,0x7e9c,0x7f61,0x7fd7,
+        0x7fff
+};
+
+/**
+ * Sine calculation using interpolated table lookup.
+ * Instead of radians or degrees we use "turns" here. Means this
+ * sine does NOT return one phase for 0 to 2*PI, but for 0 to 1.
+ * Input: -1 to 1 as int16 Q15  == -32768 to 32767.
+ * Output: -1 to 1 as int16 Q15 == -32768 to 32767.
+ *
+ * See the full description at www.AtWillys.de for the detailed
+ * explanation.
+ *
+ * @param int16_t angle Q15
+ * @return int16_t Q15
+ */
+int16_t sin1(int16_t angle)
+{
+    int16_t v0, v1;
+    if(angle < 0) { angle += INT16_MAX; angle += 1; }
+    v0 = (angle >> INTERP_BITS);
+    if(v0 & FLIP_BIT) { v0 = ~v0; v1 = ~angle; } else { v1 = angle; }
+    v0 &= TABLE_MASK;
+    v1 = sin90[v0] + (int16_t) (((int32_t) (sin90[v0+1]-sin90[v0]) * (v1 & INTERP_MASK)) >> INTERP_BITS);
+    if((angle >> INTERP_BITS) & NEGATE_BIT) v1 = -v1;
+    return v1;
+}
+
+/**
+ * Cosine calculation using interpolated table lookup.
+ * Instead of radians or degrees we use "turns" here. Means this
+ * cosine does NOT return one phase for 0 to 2*PI, but for 0 to 1.
+ * Input: -1 to 1 as int16 Q15  == -32768 to 32767.
+ * Output: -1 to 1 as int16 Q15 == -32768 to 32767.
+ *
+ * @param int16_t angle Q15
+ * @return int16_t Q15
+ */
+int16_t cos1(int16_t angle)
+{
+    if(angle < 0) { angle += INT16_MAX; angle += 1; }
+    return sin1(angle - (int16_t)(((int32_t)INT16_MAX * 270) / 360));
+}
+
+
+
 
 
 void
@@ -126,13 +223,8 @@ warpEnableSPIpins(void)
 	/*	kWarpPinSPI_MOSI_UART_CTS --> PTA7 (ALT3)	*/
 	PORT_HAL_SetMuxMode(PORTA_BASE, 7, kPortMuxAlt3);
 
-	#if (WARP_BUILD_ENABLE_GLAUX_VARIANT)
-		/*	kWarpPinSPI_SCK	--> PTA9	(ALT3)		*/
-		PORT_HAL_SetMuxMode(PORTA_BASE, 9, kPortMuxAlt3);
-	#else
-		/*	kWarpPinSPI_SCK	--> PTB0	(ALT3)		*/
-		PORT_HAL_SetMuxMode(PORTB_BASE, 0, kPortMuxAlt3);
-	#endif
+    /*	kWarpPinSPI_SCK	--> PTB0	(ALT3)		*/
+    PORT_HAL_SetMuxMode(PORTB_BASE, 0, kPortMuxAlt3);
 
 	/*
 	 *	Initialize SPI master. See KSDK13APIRM.pdf Section 70.4
@@ -152,86 +244,34 @@ warpEnableI2Cpins(void)
 {
 	CLOCK_SYS_EnableI2cClock(0);
 
-	/*
-	 *	Setup:
-	 *
-	 *		PTB3/kWarpPinI2C0_SCL_UART_TX	-->	(ALT2 == I2C)
-	 *		PTB4/kWarpPinI2C0_SDA_UART_RX	-->	(ALT2 == I2C)
-	 */
 	PORT_HAL_SetMuxMode(PORTB_BASE, 3, kPortMuxAlt2);
 	PORT_HAL_SetMuxMode(PORTB_BASE, 4, kPortMuxAlt2);
 
-	I2C_DRV_MasterInit(0 /* I2C instance */, (i2c_master_state_t *)&i2cMasterState);
+	I2C_DRV_MasterInit(0, (i2c_master_state_t *)&i2cMasterState);
 }
 
 
 void
 lowPowerPinStates(void)
 {
-    /*
-     *	Following Section 5 of "Power Management for Kinetis L Family" (AN5088.pdf),
-     *	we configure all pins as output and set them to a known state. We choose
-     *	to set them all to '0' since it happens that the devices we want to keep
-     *	deactivated (SI4705) also need '0'.
-     */
 
-    /*
-     *			PORT A
-     */
-    /*
-     *	For now, don't touch the PTA0/1/2 SWD pins. Revisit in the future.
-     */
     PORT_HAL_SetMuxMode(PORTA_BASE, 0, kPortMuxAlt3);
     PORT_HAL_SetMuxMode(PORTA_BASE, 1, kPortMuxAlt3);
     PORT_HAL_SetMuxMode(PORTA_BASE, 2, kPortMuxAlt3);
-
-    /*
-     *	PTA3 and PTA4 are the EXTAL0/XTAL0. They are also connected to the clock output
-     *	of the RV8803 (and PTA4 is a sacrificial pin for PTA3), so do not want to drive them.
-     *	We however have to configure PTA3 to Alt0 (kPortPinDisabled) to get the EXTAL0
-     *	functionality.
-     *
-     *	NOTE:	kPortPinDisabled is the equivalent of `Alt0`
-     */
     PORT_HAL_SetMuxMode(PORTA_BASE, 3, kPortPinDisabled);
     PORT_HAL_SetMuxMode(PORTA_BASE, 4, kPortPinDisabled);
-
-    /*
-     *	Disable PTA5
-     *
-     *	NOTE: Enabling this significantly increases current draw
-     *	(from ~180uA to ~4mA) and we don't need the RTC on revC.
-     *
-     */
     PORT_HAL_SetMuxMode(PORTA_BASE, 5, kPortPinDisabled);
-
-    /*
-     *	Section 2.6 of Kinetis Energy Savings – Tips and Tricks says
-     *
-     *		"Unused pins should be configured in the disabled state, mux(0),
-     *		to prevent unwanted leakage (potentially caused by floating inputs)."
-     *
-     *	However, other documents advice to place pin as GPIO and drive low or high.
-     *	For now, leave disabled. Filed issue #54 low-power pin states to investigate.
-     */
     PORT_HAL_SetMuxMode(PORTA_BASE, 6, kPortPinDisabled);
     PORT_HAL_SetMuxMode(PORTA_BASE, 7, kPortPinDisabled);
     PORT_HAL_SetMuxMode(PORTA_BASE, 8, kPortPinDisabled);
     PORT_HAL_SetMuxMode(PORTA_BASE, 9, kPortPinDisabled);
 
     /*
-     *	NOTE: The KL03 has no PTA10 or PTA11
-     */
-    /*
      * Configure PTA12 for interrupt on falling edge
      */
-    PORT_HAL_SetMuxMode(PORTA_BASE, 12, kPortMuxAlt3);//kPortMuxAsGpio);
+    PORT_HAL_SetMuxMode(PORTA_BASE, 12, kPortMuxAsGpio); //kPortMuxAlt3);//
     PORT_HAL_SetPinIntMode(PORTA_BASE, 12, kPortIntRisingEdge);//kPortIntEitherEdge);
 
-
-    /*
-     *			PORT B
-     */
     PORT_HAL_SetMuxMode(PORTB_BASE, 0, kPortPinDisabled);
     PORT_HAL_SetMuxMode(PORTB_BASE, 1, kPortPinDisabled);
     PORT_HAL_SetMuxMode(PORTB_BASE, 2, kPortPinDisabled);
@@ -380,59 +420,50 @@ int16_t fpsin(int16_t i)
 //Cos(x) = sin(x + pi/2)
 #define fpcos(i) fpsin((int16_t)(((uint16_t)(i)) + 8192U))
 
-// *********************************************************
-// ***
-// ***   Routines to compute arctangent to 6.6 digits
-// ***  of accuracy.
-// ***  Source: http://www.ganssle.com/approx/sincos.cpp
-// *********************************************************
-//
-//		atan_66s computes atan(x)
-//
-//  Accurate to about 6.6 decimal digits over the range [0, pi/12].
-//
-//  Algorithm:
-//		atan(x)= x(c1 + c2*x**2)/(c3 + x**2)
-//
-//  Arcsine(x)	 = atan(x/√(1-x2))
-//  Arccosine(x) = Π/2 - arcsine(x)
-//               = Π/2 - atan(x/√(1-x2))
-//
-/*
-float atan_66s(double x)
-{
-    const float c1=1.6867629106;
-    const float c2=0.4378497304;
-    const float c3=1.6867633134;
-    float x2;							// The input argument squared
-
-    x2=x * x;
-    float (x*(c1 + x2*c2)/(c3 + x2));
+uint16_t
+acos_fp(int16_t x /* 0<x<2098 */) {
+    return gapsqrt32((6*2098*4) - gapsqrt32((12*2098*2098*16) + (24*x*2098*16)));
 }
- */
 
-// TODO - Find appropriate fixed point acos() solution and implement
+
 int
-getGradient(int16_t x, int16_t y, int16_t z, uint8_t * display_digits) {
-    uint16_t    rms;
-    int16_t     aRes;
-    uint16_t    gradient_rads;
+getGradient(int16_t xAc, int16_t yAc, int16_t zAc, uint8_t * display_digits) {
+    //uint16_t    rms;
+    //int16_t     aRes;
+    uint16_t    gradientRads;
+    uint32_t    gradientPercent;
+
+    //rmsAc = getRmsXyz(xAc, yAc, zAc);
+    //aRes = rms - 2098;
+
+    // If zAc greater than 1g it is due to noise
+    // Exit and digits are 0
+    if (zAc >= 2098) {
+        return 0;
+    }
 
     // Check if x-axis acceleration is
     //    positive (downhill)
-    // or negative (uphill)
-    if (x < 0) {
-        digits[0] = 1;
+    //    negative (uphill)
+    if (xAc < 0) {
+        display_digits[0] = 1;
+        zAc = zAc * -1;
     }
+    gradientRads = acos_fp(zAc);
+    gradientPercent = 1000 * sin1(gradientRads*4) / cos1(gradientRads*4);
+    warpPrint("Grad: %d\n", gradientPercent);
+    OSA_TimeDelay(10);
+    warpPrint("Sin: %d\n", sin1(gradientRads));
+    OSA_TimeDelay(10);
+    warpPrint("Cos: %d\n", cos1(gradientRads));
+    OSA_TimeDelay(10);
+    display_digits[3] = (gradientPercent / 100) % 10;
+    display_digits[4] = (gradientPercent / 10) % 10;
+    display_digits[5] = gradientPercent % 10;
 
-    gradient_rads =
-
-    rms = getRmsXyz(x, y, z);
-    aRes = 4096 - rms;
     return 0;
 }
 
-// TODO - Find the best method of routing the
 
 int
 main(void) {
@@ -447,7 +478,7 @@ main(void) {
     /*
      *	Set board crystal value (Warp revB and earlier).
      */
-    g_xtal0ClkFreq = 32768U;
+    //g_xtal0ClkFreq = 32768U;
 
     /*
      *	Initialize KSDK Operating System Abstraction layer (OSA) layer.
@@ -492,9 +523,20 @@ main(void) {
     OSA_TimeDelay(100);
     initSSD1331();
     OSA_TimeDelay(100);
-    warpPrint("sqrt 121: %d", gapsqrt32(121));
-    warpPrint("RMS 100, 100, 100: %d", getRmsXyz(100, 100, 100));
+    warpPrint("sqrt 121: %d\n", gapsqrt32(121));
+    warpPrint("RMS 100, 100, 100: %d\n", getRmsXyz(100, 100, 100));
     OSA_TimeDelay(1000);
+
+    warpPrint("%d\n\n", acos(2098));
+    warpPrint("%d\n\n", acos(2097));
+    warpPrint("%d\n\n", acos(2075));
+    warpPrint("%d\n\n", acos(2050));
+    warpPrint("%d\n\n", acos(2025));
+    warpPrint("%d\n\n", acos(2000));
+    warpPrint("%d\n\n", acos(1500));
+    getGradient(0, 0, 2098, gradDigits);
+    getGradient(0, 0, 2097, gradDigits);
+    getGradient(0, 0, 1800, gradDigits);
 
     uint8_t linesL[8] = {0, 0, 0, 20, 0, 0, 10, 0};
     uint8_t linese[28] = {10, 0 , 3, 0, 3, 0, 0, 3, 0, 3, 0, 6, 0, 6, 3, 10, 3, 10, 7, 10, 7, 10, 10, 6, 10, 6, 0, 6};
@@ -583,11 +625,12 @@ main(void) {
 
     clearScreen();
 
-    //warpPrint("sampleCount, xGyro, yGyro, zGyro\n");
-    timeStart = OSA_TimeGetMsec();
     drawPoint(35, 25, 8, 255);
+
     volatile uint8_t statusRegisterPulse;
     volatile uint8_t statusRegisterInt;
+
+    timeStart = OSA_TimeGetMsec();
 
     while (1) {
 
@@ -655,7 +698,7 @@ main(void) {
 
         if (currTime - timeStart >= 1000) {
             warpPrint("%d\n", zAccel);
-            convertFromRawMMA8451Q(zAccel, digits);
+            convertFromRawMMA8451Q(xAccel, digits);
             if (digitsPrev[0] != digits[0]) {
                 if (digits[0] == 1) {
                     drawMinus(10, 25, 8, 255);

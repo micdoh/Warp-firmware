@@ -102,7 +102,7 @@ gpio_input_pin_user_config_t	inputPins[] = {
         {
                 .pinName = kWarpPinMMA8451QINT2,
                 .config.isPullEnable = true,
-                .config.pullSelect = kPortPullUp, // TODO - Try kPortPullDown
+                .config.pullSelect = kPortPullDown, // TODO - Try kPortPullUp
                 .config.isPassiveFilterEnabled = false,
                 .config.interrupt = kPortIntRisingEdge,
         },

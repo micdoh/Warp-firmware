@@ -50,19 +50,6 @@ enum _gpio_pins
     kWarpPinSPI_CK		        = GPIO_MAKE_PIN(HW_GPIOA, 9),
     kWarpPinMMA8451QINT2		    = GPIO_MAKE_PIN(HW_GPIOA, 12),
 
-
-    //kWarpPinSI4705_nRST		= GPIO_MAKE_PIN(HW_GPIOB, 2),
-
-/*
-	kWarpPinI2C0_SCL_UART_TX		= GPIO_MAKE_PIN(HW_GPIOB, 3),
-	kWarpPinI2C0_SDA_UART_RX		= GPIO_MAKE_PIN(HW_GPIOB, 4),
-	kWarpPinTPS62740_REGCTRL		= GPIO_MAKE_PIN(HW_GPIOB, 5),
-	kWarpPinTPS62740_VSEL4			= GPIO_MAKE_PIN(HW_GPIOB, 6),
-	kWarpPinTPS62740_VSEL3			= GPIO_MAKE_PIN(HW_GPIOB, 7),
-	kWarpPinTPS62740_VSEL2			= GPIO_MAKE_PIN(HW_GPIOB, 10),
-	kWarpPinTPS62740_VSEL1			= GPIO_MAKE_PIN(HW_GPIOB, 11),
-	kWarpPinCLKOUT32K			    = GPIO_MAKE_PIN(HW_GPIOB, 13),
- */
 };
 
 extern gpio_input_pin_user_config_t	    inputPins[];
