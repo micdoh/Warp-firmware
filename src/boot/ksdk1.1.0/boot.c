@@ -659,6 +659,7 @@ main(void) {
     volatile int16_t currDerivGyro = 0;
     volatile int16_t prevDerivGyro = 0;
     //volatile int16_t * derivBufferGyro = {0, 0, 0, 0, 0, 0, 0, 0};
+    uint8_t reg_val;
 
     timeStart = OSA_TimeGetMsec();
 
@@ -671,28 +672,42 @@ main(void) {
             tapCount++;
             tapCount %= 3;
             readSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_SRC, 1); // Clear interrupt flag
-            statusRegisterPulse = deviceMMA8451QState.i2cBuffer[0];
             readSensorRegisterMMA8451Q(reg_MMA8451Q_INT_SOURCE, 1);
-            statusRegisterInt = deviceMMA8451QState.i2cBuffer[0];
             warpPrint("TAP\n");
             warpPrint("%d\n", statusRegisterPulse);
         }
         readSensorRegisterMMA8451Q(reg_MMA8451Q_INT_SOURCE, 1);
-        statusRegisterInt = deviceMMA8451QState.i2cBuffer[0];
         readSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_SRC, 1); // Clear interrupt flag
-        statusRegisterPulse = deviceMMA8451QState.i2cBuffer[0];
+
+        dataReady = false;
+        readSensorRegisterL3GD20H(reg_L3GD20H_FIFO_SRC, 1);
+        reg_val = deviceL3GD20HState.i2cBuffer[0];
+        //warpPrint("Reg1: %d\n", reg_val); // Clear interrupt flag
 
         if (dataReady) {
-
             dataReady = false;
-            readSensorRegisterL3GD20H(reg_L3GD20H_FIFO_SRC, 1); // Clear interrupt flag
+            warpPrint("READY\n");
+        }
+        if (((reg_val & 0b11000000) == 0b11000000) || (reg_val == 32)) {
 
-            if (sampleCount == 0) {
-                prevDerivGyro = currDerivGyro;
-            }
-            returnSensorDataL3GD20HFIFO(readingsL3GD20HFIFO, kWarpSizesI2cBufferBytesL3GD20H);
+            /*
+             * Might have to disable FIFO and just poll the data in low ODR mode, calculate the averages and increment the count,
+             * then check for the gradient diff every n samples
+             */
+            //readSensorRegisterL3GD20H(reg_L3GD20H_FIFO_SRC, 1);
+            //reg_val = deviceL3GD20HState.i2cBuffer[0];
+            //warpPrint("Reg1: %d\n", reg_val); // Clear interrupt flag
+            //readSensorRegisterL3GD20H(reg_L3GD20H_STATUS, 1);
+            //reg_val = deviceL3GD20HState.i2cBuffer[0];
+            //warpPrint("Reg2: %d\n", reg_val); // Clear interrupt flag
+            //readSensorRegisterL3GD20H(reg_L3GD20H_IG_SRC, 1);
+            //reg_val = deviceL3GD20HState.i2cBuffer[0];
+            //warpPrint("Reg3: %d\n", reg_val); // Clear interrupt flag
 
             // Get average value of angular velocity from values in FIFO (default 32)
+            returnSensorDataL3GD20HFIFO(readingsL3GD20HFIFO, kWarpSizesI2cBufferBytesL3GD20H);
+            //currAvgGyro = sumAvg(readingsL3GD20HFIFO, 32);
+            currAvgGyro = 0;
             for (i = 0; i < nSamplesL3GD20H; i++) {
                 currAvgGyro = iterativeAvg(currAvgGyro, readingsL3GD20HFIFO[i], i+1);
             }
@@ -700,31 +715,32 @@ main(void) {
             // Get slope of curve from to previous average
             //currDerivGyro = currAvgGyro - prevAvgGyro;
 
-            currDerivGyro = iterativeAvg(currDerivGyro, (currAvgGyro - prevAvgGyro), i+1);
-
+            //currDerivGyro = iterativeAvg(currDerivGyro, (currAvgGyro - prevAvgGyro), i+1);
+            currDerivGyro = (currDerivGyro + currAvgGyro - prevAvgGyro) / 2;
             prevAvgGyro = currAvgGyro;
 
             sampleCount++;
-            sampleCount %= 3;
+            sampleCount %= 4;
+            if (sampleCount == 0) {
+                prevDerivGyro = currDerivGyro;
+            }
 
-            warpPrint("PrevAvg: %d\n", prevAvgGyro);
-            warpPrint("CurrAvg: %d\n", currAvgGyro);
-            warpPrint("PrevDeriv: %d\n", prevDerivGyro);
-            warpPrint("CurrDeriv: %d\n", currDerivGyro);
+            //warpPrint("PrevAvg: %d\n", prevAvgGyro);
+            //warpPrint("CurrAvg: %d\n", currAvgGyro);
+            //warpPrint("PrevDeriv: %d\n", prevDerivGyro);
+            //warpPrint("CurrDeriv: %d\n", currDerivGyro);
+            //warpPrint("SampleCount: %d\n", sampleCount);
 
             // If
-            if (sampleCount == 2) {
+            if (sampleCount == 3) {
                 if (((currDerivGyro > 0) && (prevDerivGyro < 0)) || ((currDerivGyro < 0) && (prevDerivGyro > 0))) {
                     if (((currDerivGyro-prevDerivGyro)*(currDerivGyro-prevDerivGyro)) > 100) {
-                        warpPrint("PrevAvg: %d\n", prevAvgGyro);
-                        warpPrint("CurrAvg: %d\n", currAvgGyro);
-                        warpPrint("PrevDeriv: %d\n", prevDerivGyro);
-                        warpPrint("CurrDeriv: %d\n", currDerivGyro);
                         strokeCount++;
-                        warpPrint("%d\n", strokeCount);
+                        warpPrint("!!!!!!! %d\n", strokeCount);
                     }
                 }
             }
+            //OSA_TimeDelay(1000);
         }
 
         switch(tapCount) {

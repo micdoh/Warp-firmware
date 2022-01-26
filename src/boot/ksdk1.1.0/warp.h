@@ -49,7 +49,10 @@ typedef enum
     reg_L3GD20H_CTRL_5 = 0x24,
     reg_L3GD20H_FIFO_CTRL = 0x2E,
     reg_L3GD20H_FIFO_SRC = 0x2F, // Read-only
-    reg_L3GD20H_LOW_ODR = 0x39, // Read-only
+    reg_L3GD20H_LOW_ODR = 0x39,
+    reg_L3GD20H_STATUS = 0x27, // Read-only
+    reg_L3GD20H_IG_SRC = 0x31, // Read-only
+    reg_L3GD20H_IG_CFG = 0x30,
 
     reg_MMA8451Q_STATUS = 0x00,
     reg_MMA8451Q_INT_SOURCE = 0x0C, // Read-only

@@ -127,20 +127,24 @@ writeSensorRegisterL3GD20H(uint8_t deviceRegister, uint8_t payload)//, uint16_t 
 WarpStatus
 configureSensorL3GD20H(void)
 {
-	WarpStatus	status1, status2, status3, status4, status5, status6, status7;
+	WarpStatus	status1, status2, status3, status4, status5, status6, status7, status8;
 
     writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_5, 0x80); // Reset
+    OSA_TimeDelay(100);
     writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_1, 0b00001000); // Sleep mode
+    OSA_TimeDelay(100);
     status2 = writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_2, val_L3GD20H_CTRL_2);
     status3 = writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_3, val_L3GD20H_CTRL_3);
-    status4 = writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_4, val_L3GD20H_CTRL_3);
-    status5 = writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_5, val_L3GD20H_CTRL_5);
+    status4 = writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_4, val_L3GD20H_CTRL_4);
     status6 = writeSensorRegisterL3GD20H(reg_L3GD20H_FIFO_CTRL, val_L3GD20H_FIFO_CTRL);
+    status8 = writeSensorRegisterL3GD20H(reg_L3GD20H_IG_CFG, val_L3GD20H_IG_CFG);
     status7 = writeSensorRegisterL3GD20H(reg_L3GD20H_LOW_ODR, val_L3GD20H_LOW_ODR);
+    status5 = writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_5, val_L3GD20H_CTRL_5);
+
 
     status1 = writeSensorRegisterL3GD20H(reg_L3GD20H_CTRL_1, val_L3GD20H_CTRL_1);
 
-	return (status1 | status2 | status3 | status4 | status5 | status6 | status7);
+	return (status1 | status2 | status3 | status4 | status5 | status6 | status7 | status8);
 }
 
 WarpStatus

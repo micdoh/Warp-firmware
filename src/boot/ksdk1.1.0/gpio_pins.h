@@ -49,7 +49,7 @@ enum _gpio_pins
     kWarpPinSPI_MOSI			    = GPIO_MAKE_PIN(HW_GPIOA, 8),
     kWarpPinSPI_CK		            = GPIO_MAKE_PIN(HW_GPIOA, 9),
     kWarpPinMMA8451QINT2		    = GPIO_MAKE_PIN(HW_GPIOA, 12),
-    kWarpPinL3GD20HINTDRDY		        = GPIO_MAKE_PIN(HW_GPIOB, 6),
+    kWarpPinL3GD20HINTDRDY		    = GPIO_MAKE_PIN(HW_GPIOB, 6),
 
 };
 

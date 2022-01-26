@@ -88,6 +88,7 @@ typedef enum
     val_L3GD20H_CTRL_5 = 0b01001010, // Enable FIFO, enable LPF2 (20Hz cut-off), no threshold
     val_L3GD20H_FIFO_CTRL = 0b01000000, // FIFO stream mode, 32 sample threshold (default)
     val_L3GD20H_LOW_ODR = 0b00000001, // Low speed Output Data Rate enabled
+    val_L3GD20H_IG_CFG = 0b01000000, // Latched interrupts
 
     val_MMA8451Q_CTRL_REG1 = 0b00001101, // 400Hz, low noise (limited to +/-4g), active mode
     val_MMA8451Q_CTRL_REG2 = 0b00000000, // Normal power mode
