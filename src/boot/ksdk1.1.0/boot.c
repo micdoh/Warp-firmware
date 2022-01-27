@@ -89,8 +89,11 @@ volatile uint8_t strokeCountPrev = 0;
 volatile uint8_t strokeCount6 = 0;
 volatile uint8_t sampleCounter = 0;
 volatile uint8_t cadence = 0;
+volatile uint8_t printIndicator = 1;
+volatile uint8_t stroke3Secs1 = 0;
+volatile uint8_t stroke3Secs2 = 0;
+volatile uint8_t stroke3Secs3 = 0;
 volatile uint8_t time = 0;
-volatile printIndicator = 1;
 const uint8_t nSamplesL3GD20H = kWarpSizesI2cBufferBytesL3GD20H/2;
 const uint8_t nSamplesMMA8451Q = kWarpSizesI2cBufferBytesMMA8451Q/6;
 int16_t readingsMMA8451QFIFO[kWarpSizesI2cBufferBytesMMA8451Q/2];
@@ -113,13 +116,6 @@ static void					   lowPowerPinStates(void);
 int16_t                        iterativeAvg(int16_t prev_avg, int16_t cur_elem, uint8_t n);
 uint16_t                       gapsqrt32(uint32_t a);
 uint16_t                       getRmsXyz(int16_t x, int16_t y, int16_t z);
-//WarpStatus						writeByteToI2cDeviceRegister(uint8_t i2cAddress, bool sendCommandByte, uint8_t commandByte, bool sendPayloadByte, uint8_t payloadByte);
-//WarpStatus						writeBytesToSpi(uint8_t *  payloadBytes, int payloadLength);
-//void							warpLowPowerSecondsSleep(uint32_t sleepSeconds, bool forceAllPinsIntoLowPowerState);
-
-
-
-
 
 /**
  * Example for a sine/cosine table lookup
@@ -130,8 +126,6 @@ uint16_t                       getRmsXyz(int16_t x, int16_t y, int16_t z);
  * @file sin1.c
  * @author stfwi
  **/
-
-#include "sin1.h"
 
 /*
  * The number of bits of our data type: here 16 (sizeof operator returns bytes).
@@ -233,6 +227,41 @@ void bootSplash(void)
     drawChar(55, 50, 255, linesi, 2,2);
     drawChar(60, 50, 255, linesd, 4, 2);
     drawChar(73, 50, 255, linese, 7,2);
+}
+
+void printMMA8451QValues(void) {
+    warpPrint("xAccel, yAccel, zAccel");
+    while (1) {
+        readSensorRegisterMMA8451Q(reg_MMA8451Q_STATUS, 1);
+        statusRegisterValueAccel = deviceMMA8451QState.i2cBuffer[0];
+
+        if ((statusRegisterValueAccel & 0b11000000) > 0) {
+
+            returnSensorDataMMA8451QFIFO(readingsMMA8451QFIFO, kWarpSizesI2cBufferBytesMMA8451Q);
+
+            for (i = 0; i < nSamplesMMA8451Q; i++) {
+                warpPrint("%d, %d, %d\n", readingsMMA8451QFIFO[i], readingsMMA8451QFIFO[i + 1],
+                          readingsMMA8451QFIFO[i + 2]);
+            }
+        }
+    }
+}
+
+void printL3GD20HValues(void) {
+    warpPrint("yGyro, ");
+    while (1) {
+        readSensorRegisterL3GD20H(reg_L3GD20H_FIFO_SRC, 1); // FIFO
+        statusRegisterValueGyro = deviceL3GD20HState.i2cBuffer[0];
+
+        if ((statusRegisterValueGyro & 0b11000000) > 0) {
+
+            returnSensorDataL3GD20HFIFO(readingsL3GD20HFIFO, kWarpSizesI2cBufferBytesL3GD20H);
+
+            for (i = 0; i < nSamplesL3GD20H; i++) {
+                warpPrint("%d\n", readingsL3GD20HFIFO[i]);
+            }
+        }
+    }
 }
 
 void
@@ -426,57 +455,20 @@ getRmsXyz(int16_t x, int16_t y, int16_t z) {
 
 void
 printCadence(uint8_t startCol, uint8_t scale, uint8_t * cadDigits, uint8_t * cadDigitsPrev) {
-    if (digitsPrev[0] != cadDigits[0]) {
-        drawGlyph(67, 25, 8, 255, cadDigits[4]);
+    if (cadDigitsPrev[0] != cadDigits[0]) {
+        drawGlyph(67, 25, 8, 255, cadDigits[0]);
         digitsPrev[4] = cadDigits[4];
     }
-    if (digitsPrev[1] != cadDigits[1]) {
-        drawGlyph(80, 25, 8, 255, cadDigits[5]);
+    if (cadDigitsPrev[1] != cadDigits[1]) {
+        drawGlyph(80, 25, 8, 255, cadDigits[1]);
         digitsPrev[5] = cadDigits[5];
     }
+    if (cadDigitsPrev[2] != cadDigits[2]) {
+        drawGlyph(67, 25, 8, 255, cadDigits[2]);
+        digitsPrev[4] = cadDigits[4];
+    }
+
 }
-
-
-/*
- * Source: https://www.nullhardware.com/blog/fixed-point-sine-and-cosine-for-embedded-systems/
-Implements the 5-order polynomial approximation to sin(x).
-@param i   angle (with 2^15 units/circle)
-@return    16 bit fixed point Sine value (4.12) (ie: +4096 = +1 & -4096 = -1)
-
-The result is accurate to within +- 1 count. ie: +/-2.44e-4.
-*/
-int16_t fpsin(int16_t i)
-{
-    /* Convert (signed) input to a value between 0 and 8192. (8192 is pi/2, which is the region of the curve fit). */
-    /* ------------------------------------------------------------------- */
-    i <<= 1;
-    uint8_t c = i<0; //set carry for output pos/neg
-
-    if(i == (i|0x4000)) // flip input value to corresponding value in range [0..8192)
-        i = (1<<15) - i;
-    i = (i & 0x7FFF) >> 1;
-    /* ------------------------------------------------------------------- */
-
-    /* The following section implements the formula:
-     = y * 2^-n * ( A1 - 2^(q-p)* y * 2^-n * y * 2^-n * [B1 - 2^-r * y * 2^-n * C1 * y]) * 2^(a-q)
-    Where the constants are defined as follows:
-    */
-    enum {A1=3370945099UL, B1=2746362156UL, C1=292421UL};
-    enum {n=13, p=32, q=31, r=3, a=12};
-
-    uint32_t y = (C1*((uint32_t)i))>>n;
-    y = B1 - (((uint32_t)i*y)>>r);
-    y = (uint32_t)i * (y>>n);
-    y = (uint32_t)i * (y>>n);
-    y = A1 - (y>>(p-q));
-    y = (uint32_t)i * (y>>n);
-    y = (y+(1UL<<(q-a-1)))>>(q-a); // Rounding
-
-    return c ? -y : y;
-}
-
-//Cos(x) = sin(x + pi/2)
-#define fpcos(i) fpsin((int16_t)(((uint16_t)(i)) + 8192U))
 
 uint16_t
 acos_fp(int16_t x /* 0<x<2098 */) {
@@ -486,13 +478,14 @@ acos_fp(int16_t x /* 0<x<2098 */) {
 
 int
 getGradient(int16_t xAc, int16_t yAc, int16_t zAc, uint8_t * display_digits) {
-    //uint16_t    rms;
-    //int16_t     aRes;
+    uint16_t    rmsAccel;
+    int16_t     aRes;
     uint16_t    gradientRads;
     uint32_t    gradientPercent;
 
-    //rmsAc = getRmsXyz(xAc, yAc, zAc);
-    //aRes = rms - 2098;
+    rmsAccel = getRmsXyz(xAc, yAc, zAc);
+    aRes = rmsAccel - 2098;
+    warpPrint("X RES: %d\n", aRes);
 
     // If zAc greater than 1g it is due to noise
     // Exit and digits are 0
@@ -581,7 +574,6 @@ main(void) {
 
         readSensorRegisterMMA8451Q(reg_MMA8451Q_STATUS, 1);
         statusRegisterValueAccel = deviceMMA8451QState.i2cBuffer[0];
-        warpPrint("Accel %d\n", statusRegisterValueAccel);
         if ((statusRegisterValueAccel & 0b11000000) > 0) {
 
             returnSensorDataMMA8451QFIFO(readingsMMA8451QFIFO, kWarpSizesI2cBufferBytesMMA8451Q);
@@ -605,56 +597,30 @@ main(void) {
     writeSensorRegisterMMA8451Q(0x30, Y_OFFSET); // Y_OFFSET
     writeSensorRegisterMMA8451Q(0x31, Z_OFFSET); // Z_OFFSET
     writeSensorRegisterMMA8451Q(reg_MMA8451Q_CTRL_REG1, val_MMA8451Q_CTRL_REG1); // Active
+    // Offset measurements complete and registers configured
 
+    // Remove boot screen
     clearScreen();
 
     // Print output of MMA8451Q indefinitely (for evaluation/debug purposes)
     if (WARP_BUILD_BOOT_TO_ACCELSTREAM) {
-        warpPrint("xAccel, yAccel, zAccel");
-        while (1) {
-            readSensorRegisterMMA8451Q(reg_MMA8451Q_STATUS, 1);
-            statusRegisterValueAccel = deviceMMA8451QState.i2cBuffer[0];
-
-            if ((statusRegisterValueAccel & 0b11000000) > 0) {
-
-                returnSensorDataMMA8451QFIFO(readingsMMA8451QFIFO, kWarpSizesI2cBufferBytesMMA8451Q);
-
-                for (i = 0; i < nSamplesMMA8451Q; i++) {
-                    warpPrint("%d, %d, %d\n", readingsMMA8451QFIFO[i], readingsMMA8451QFIFO[i + 1],
-                              readingsMMA8451QFIFO[i + 2]);
-                }
-            }
-        }
+        printMMA8451QValues();
     }
 
     // Print output of L3GD20H indefinitely (for evaluation/debug purposes)
     if (WARP_BUILD_BOOT_TO_GYROSTREAM) {
-        warpPrint("yGyro, ");
-        while (1) {
-            readSensorRegisterL3GD20H(reg_L3GD20H_FIFO_SRC, 1); // FIFO
-            statusRegisterValueGyro = deviceL3GD20HState.i2cBuffer[0];
-
-            if ((statusRegisterValueGyro & 0b11000000) > 0) {
-
-                returnSensorDataL3GD20HFIFO(readingsL3GD20HFIFO, kWarpSizesI2cBufferBytesL3GD20H);
-
-                for (i = 0; i < nSamplesL3GD20H; i++) {
-                    warpPrint("%d\n", readingsL3GD20HFIFO[i]);
-                }
-            }
-        }
+        printL3GD20HValues();
     }
 
     drawPoint(35, 25, 8, 255);
 
     volatile uint8_t statusRegisterPulse;
-    volatile uint8_t statusRegisterInt;
     volatile int16_t Accel;
     volatile int16_t currAvgGyro = 0;
     volatile int16_t prevAvgGyro = 0;
     volatile int16_t currDerivGyro = 0;
     volatile int16_t prevDerivGyro = 0;
-    uint8_t reg_val;
+    uint8_t statusRegisterL3GD20HFIFO;
 
     timeStart = OSA_TimeGetMsec();
 
@@ -672,14 +638,12 @@ main(void) {
         }
 
         readSensorRegisterL3GD20H(reg_L3GD20H_FIFO_SRC, 1);
-        reg_val = deviceL3GD20HState.i2cBuffer[0];
-        //warpPrint("Reg1: %d\n", reg_val); // Clear interrupt flag
+        statusRegisterL3GD20HFIFO = deviceL3GD20HState.i2cBuffer[0];
 
-        if (dataReady) {
-            dataReady = false;
-            warpPrint("READY\n");
-        }
-        if (((reg_val & 0b1000000) == 0b1000000) || ((reg_val & 0b0100000) == 0b0100000) || (reg_val == 32)) {
+        if (
+                ((statusRegisterL3GD20HFIFO & 0b1000000) == 0b1000000) ||
+                ((statusRegisterL3GD20HFIFO & 0b0100000) == 0b0100000) ||
+                (statusRegisterL3GD20HFIFO == 32)) {
 
             // Get average value of angular velocity from values in FIFO (default 32)
             returnSensorDataL3GD20HFIFO(readingsL3GD20HFIFO, kWarpSizesI2cBufferBytesL3GD20H);
@@ -726,25 +690,14 @@ main(void) {
 
         if (currTime - timeStart >= 1000) {
 
-            readSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_SRC, 1); // Clear interrupt flag
-
             time ++;
-            time %= 6;
-            //strokeCount3 += strokeCount;
-            //strokeCount12 += strokeCount;
-            //if (time == 0) {
-                //cadence = ((5 * strokeCount12) + (20 * strokeCount3)) / 2;
-                //strokeCount12 = 0;
-                //strokeCount12 = iterativeAvg(strokeCount12, strokeCount3, )
-                //warpPrint("CADENCE: %d\n", cadence);
-            //}
+            time %= 3;
+
             if (time == 0) {
-                strokeCount6 -= strokeCountPrev;
-            }
-            if (time % 3 == 0) {
-                strokeCount6 += strokeCount;
-                cadence = ((5 * strokeCount6) + (20 * strokeCount)) / 2;
-                strokeCountPrev = strokeCount;
+                stroke3Secs2 = stroke3Secs1;
+                stroke3Secs3 = stroke3Secs2;
+                stroke3Secs1 = strokeCount;
+                cadence = ((2 * stroke3Secs3) + (3 * stroke3Secs2) + (5 * strokeCount)) * 2;
                 warpPrint("CADENCE: %d\n", cadence);
                 strokeCount = 0;
             }
@@ -754,6 +707,8 @@ main(void) {
 
             // Update screen every 2 secs
             if (printIndicator == 1) {
+
+                readSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_SRC, 1); // Clear interrupt flag
 
                 if ((statusRegisterValueAccel & 0b11000000) > 0) {
 
@@ -766,6 +721,8 @@ main(void) {
                         j+=3;
                     }
                 }
+
+                getGradient(xAccel, yAccel, zAccel, gradDigits);
 
                 convertFromRawMMA8451Q(Accel, digits);
 
