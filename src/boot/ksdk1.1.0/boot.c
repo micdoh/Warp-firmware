@@ -110,103 +110,10 @@ uint8_t gradDigitsPrev[5] = {1, 9, 9, 9, 9};
 uint8_t digits[6] = {0, 0, 0, 0, 0, 0};
 uint8_t digitsPrev[6] = {1, 9, 9, 9, 9, 9};
 
-int16_t sin1(int16_t angle);
-int16_t cos1(int16_t angle);
 static void					   lowPowerPinStates(void);
 int16_t                        iterativeAvg(int16_t prev_avg, int16_t cur_elem, uint8_t n);
 uint16_t                       gapsqrt32(uint32_t a);
 uint16_t                       getRmsXyz(int16_t x, int16_t y, int16_t z);
-
-/**
- * Example for a sine/cosine table lookup
- * Implementation of sin1() / cos1().
- * We "outsource" this implementation so that the precompiler constants/macros
- * are only defined here.
- *
- * @file sin1.c
- * @author stfwi
- **/
-
-/*
- * The number of bits of our data type: here 16 (sizeof operator returns bytes).
- */
-#define INT16_BITS  (8 * sizeof(int16_t))
-#ifndef INT16_MAX
-#define INT16_MAX   ((1<<(INT16_BITS-1))-1)
-#endif
-
-/*
- * "5 bit" large table = 32 values. The mask: all bit belonging to the table
- * are 1, the all above 0.
- */
-#define TABLE_BITS  (5)
-#define TABLE_SIZE  (1<<TABLE_BITS)
-#define TABLE_MASK  (TABLE_SIZE-1)
-
-/*
- * The lookup table is to 90DEG, the input can be -360 to 360 DEG, where negative
- * values are transformed to positive before further processing. We need two
- * additional bits (*4) to represent 360 DEG:
- */
-#define LOOKUP_BITS (TABLE_BITS+2)
-#define LOOKUP_MASK ((1<<LOOKUP_BITS)-1)
-#define FLIP_BIT    (1<<TABLE_BITS)
-#define NEGATE_BIT  (1<<(TABLE_BITS+1))
-#define INTERP_BITS (INT16_BITS-1-LOOKUP_BITS)
-#define INTERP_MASK ((1<<INTERP_BITS)-1)
-
-/**
- * "5 bit" lookup table for the offsets. These are the sines for exactly
- * at 0deg, 11.25deg, 22.5deg etc. The values are from -1 to 1 in Q15.
- */
-static int16_t sin90[TABLE_SIZE+1] = {
-        0x0000,0x0647,0x0c8b,0x12c7,0x18f8,0x1f19,0x2527,0x2b1e,
-        0x30fb,0x36b9,0x3c56,0x41cd,0x471c,0x4c3f,0x5133,0x55f4,
-        0x5a81,0x5ed6,0x62f1,0x66ce,0x6a6c,0x6dc9,0x70e1,0x73b5,
-        0x7640,0x7883,0x7a7c,0x7c29,0x7d89,0x7e9c,0x7f61,0x7fd7,
-        0x7fff
-};
-
-/**
- * Sine calculation using interpolated table lookup.
- * Instead of radians or degrees we use "turns" here. Means this
- * sine does NOT return one phase for 0 to 2*PI, but for 0 to 1.
- * Input: -1 to 1 as int16 Q15  == -32768 to 32767.
- * Output: -1 to 1 as int16 Q15 == -32768 to 32767.
- *
- * See the full description at www.AtWillys.de for the detailed
- * explanation.
- *
- * @param int16_t angle Q15
- * @return int16_t Q15
- */
-int16_t sin1(int16_t angle)
-{
-    int16_t v0, v1;
-    if(angle < 0) { angle += INT16_MAX; angle += 1; }
-    v0 = (angle >> INTERP_BITS);
-    if(v0 & FLIP_BIT) { v0 = ~v0; v1 = ~angle; } else { v1 = angle; }
-    v0 &= TABLE_MASK;
-    v1 = sin90[v0] + (int16_t) (((int32_t) (sin90[v0+1]-sin90[v0]) * (v1 & INTERP_MASK)) >> INTERP_BITS);
-    if((angle >> INTERP_BITS) & NEGATE_BIT) v1 = -v1;
-    return v1;
-}
-
-/**
- * Cosine calculation using interpolated table lookup.
- * Instead of radians or degrees we use "turns" here. Means this
- * cosine does NOT return one phase for 0 to 2*PI, but for 0 to 1.
- * Input: -1 to 1 as int16 Q15  == -32768 to 32767.
- * Output: -1 to 1 as int16 Q15 == -32768 to 32767.
- *
- * @param int16_t angle Q15
- * @return int16_t Q15
- */
-int16_t cos1(int16_t angle)
-{
-    if(angle < 0) { angle += INT16_MAX; angle += 1; }
-    return sin1(angle - (int16_t)(((int32_t)INT16_MAX * 270) / 360));
-}
 
 void bootSplash(void)
 {
@@ -281,15 +188,14 @@ warpEnableSPIpins(void)
 	/*
 	 *	Initialize SPI master. See KSDK13APIRM.pdf Section 70.4
 	 */
-	uint32_t			calculatedBaudRate;
+	uint32_t			          calculatedBaudRate;
 	spiUserConfig.polarity		= kSpiClockPolarity_ActiveHigh;
-	spiUserConfig.phase		= kSpiClockPhase_FirstEdge;
+	spiUserConfig.phase		    = kSpiClockPhase_FirstEdge;
 	spiUserConfig.direction		= kSpiMsbFirst;
 	spiUserConfig.bitsPerSec	= gWarpSpiBaudRateKbps * 1000;
-	SPI_DRV_MasterInit(0 /* SPI master instance */, (spi_master_state_t *)&spiMasterState);
-	SPI_DRV_MasterConfigureBus(0 /* SPI master instance */, (spi_master_user_config_t *)&spiUserConfig, &calculatedBaudRate);
+	SPI_DRV_MasterInit(0, (spi_master_state_t *)&spiMasterState);
+	SPI_DRV_MasterConfigureBus(0, (spi_master_user_config_t *)&spiUserConfig, &calculatedBaudRate);
 }
-
 
 void
 warpEnableI2Cpins(void)
@@ -301,7 +207,6 @@ warpEnableI2Cpins(void)
 
 	I2C_DRV_MasterInit(0, (i2c_master_state_t *)&i2cMasterState);
 }
-
 
 void
 lowPowerPinStates(void)
@@ -342,7 +247,6 @@ lowPowerPinStates(void)
     PORT_HAL_SetMuxMode(PORTB_BASE, 11, kPortPinDisabled);
     PORT_HAL_SetMuxMode(PORTB_BASE, 13, kPortPinDisabled);
 }
-
 
 void
 warpPrint(const char *fmt, ...)
@@ -391,7 +295,6 @@ warpPrint(const char *fmt, ...)
 	return;
 }
 
-
 void
 PORTA_IRQHandler(void)
 {
@@ -413,17 +316,6 @@ iterativeAvg(int16_t prev_avg, int16_t cur_elem, uint8_t n) {
     return result;
 }
 
-int16_t
-sumAvg(int16_t * array, uint8_t n) {
-    int index;
-    uint16_t  result = 0;
-    for (index = 0; index < n; index++) {
-        result = result + array[index];
-    }
-    result = result / n;
-    return result;
-}
-
 // From https://gist.github.com/foobaz/3287f153d125277eefea
 uint16_t
 gapsqrt32(uint32_t a) {
@@ -440,7 +332,6 @@ gapsqrt32(uint32_t a) {
     }
     return root >> 1;
 }
-
 
 uint16_t
 getRmsXyz(int16_t x, int16_t y, int16_t z) {
@@ -470,49 +361,15 @@ printCadence(uint8_t startCol, uint8_t scale, uint8_t * cadDigits, uint8_t * cad
 
 }
 
-uint16_t
-acos_fp(int16_t x /* 0<x<2098 */) {
-    return gapsqrt32((6*2098*4) - gapsqrt32((12*2098*2098*16) + (24*x*2098*16)));
-}
-
-
 int
-getGradient(int16_t xAc, int16_t yAc, int16_t zAc, uint8_t * display_digits) {
+getAccelRes(int16_t xAc, int16_t yAc, int16_t zAc) {
     uint16_t    rmsAccel;
     int16_t     aRes;
-    uint16_t    gradientRads;
-    uint32_t    gradientPercent;
 
     rmsAccel = getRmsXyz(xAc, yAc, zAc);
-    aRes = rmsAccel - 2098;
-    warpPrint("X RES: %d\n", aRes);
+    aRes = rmsAccel - 2098 - yAc;
 
-    // If zAc greater than 1g it is due to noise
-    // Exit and digits are 0
-    if (zAc >= 2098) {
-        return 0;
-    }
-
-    // Check if x-axis acceleration is
-    //    positive (downhill)
-    //    negative (uphill)
-    if (xAc < 0) {
-        display_digits[0] = 1;
-        zAc = zAc * -1;
-    }
-    gradientRads = acos_fp(zAc);
-    gradientPercent = 1000 *  sin1(gradientRads*4) / cos1(gradientRads*4);
-    warpPrint("Grad: %d\n", gradientPercent);
-    OSA_TimeDelay(10);
-    warpPrint("Sin: %d\n", sin1(gradientRads));
-    OSA_TimeDelay(10);
-    warpPrint("Cos: %d\n", cos1(gradientRads));
-    OSA_TimeDelay(10);
-    display_digits[3] = (gradientPercent / 100) % 10;
-    display_digits[4] = (gradientPercent / 10) % 10;
-    display_digits[5] = gradientPercent % 10;
-
-    return 0;
+    return aRes;
 }
 
 
