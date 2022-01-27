@@ -81,7 +81,7 @@ char							    gWarpPrintBuffer[kWarpDefaultPrintBufferSizeBytes];
 uint8_t							    gWarpSpiCommonSourceBuffer[kWarpMemoryCommonSpiBufferBytes];
 uint8_t							    gWarpSpiCommonSinkBuffer[kWarpMemoryCommonSpiBufferBytes];
 
-volatile bool dataReady = false;
+volatile bool point = false;
 volatile bool tap = false;
 volatile uint8_t tapCount = 0;
 volatile uint8_t strokeCount = 0;
@@ -94,6 +94,12 @@ volatile uint8_t stroke3Secs1 = 0;
 volatile uint8_t stroke3Secs2 = 0;
 volatile uint8_t stroke3Secs3 = 0;
 volatile uint8_t time = 0;
+volatile int16_t Accel;
+volatile int16_t currAvgGyro = 0;
+volatile int16_t prevAvgGyro = 0;
+volatile int16_t currDerivGyro = 0;
+volatile int16_t prevDerivGyro = 0;
+volatile uint8_t statusRegisterL3GD20HFIFO;
 const uint8_t nSamplesL3GD20H = kWarpSizesI2cBufferBytesL3GD20H/2;
 const uint8_t nSamplesMMA8451Q = kWarpSizesI2cBufferBytesMMA8451Q/6;
 int16_t readingsMMA8451QFIFO[kWarpSizesI2cBufferBytesMMA8451Q/2];
@@ -105,8 +111,8 @@ uint8_t i;
 uint8_t j;
 uint8_t k;
 uint32_t currTime, timeStart;
-uint8_t gradDigits[5] = {0, 0, 0, 0, 0};
-uint8_t gradDigitsPrev[5] = {1, 9, 9, 9, 9};
+uint8_t cadenceDigits[3] = {0, 0, 0};
+uint8_t cadenceDigitsPrev[3] = {1, 1, 1};
 uint8_t digits[6] = {0, 0, 0, 0, 0, 0};
 uint8_t digitsPrev[6] = {1, 9, 9, 9, 9, 9};
 
@@ -302,13 +308,6 @@ PORTA_IRQHandler(void)
     tap = true;
 }
 
-void
-PORTB_IRQHandler(void)
-{
-    PORT_HAL_ClearPortIntFlag(PORTB_BASE); // Lower interrupt pin
-    dataReady = true;
-}
-
 int16_t
 iterativeAvg(int16_t prev_avg, int16_t cur_elem, uint8_t n) {
     uint16_t  result;
@@ -345,20 +344,26 @@ getRmsXyz(int16_t x, int16_t y, int16_t z) {
 }
 
 void
-printCadence(uint8_t startCol, uint8_t scale, uint8_t * cadDigits, uint8_t * cadDigitsPrev) {
+printCadence(uint8_t cad, uint8_t * cadDigits, uint8_t * cadDigitsPrev) {
+    cadDigits[0] = (cad / 100) % 10;
+    cadDigits[1] = (cad / 10) % 10;
+    cadDigits[2] = cad % 10;
+
+    if (point) {
+        drawPoint(35, 25, 8, 0);
+    }
     if (cadDigitsPrev[0] != cadDigits[0]) {
-        drawGlyph(67, 25, 8, 255, cadDigits[0]);
+        drawGlyph(20, 20, 12, 255, cadDigits[0]);
         digitsPrev[4] = cadDigits[4];
     }
     if (cadDigitsPrev[1] != cadDigits[1]) {
-        drawGlyph(80, 25, 8, 255, cadDigits[1]);
+        drawGlyph(40, 20, 12, 255, cadDigits[1]);
         digitsPrev[5] = cadDigits[5];
     }
     if (cadDigitsPrev[2] != cadDigits[2]) {
-        drawGlyph(67, 25, 8, 255, cadDigits[2]);
+        drawGlyph(60, 20, 12, 255, cadDigits[2]);
         digitsPrev[4] = cadDigits[4];
     }
-
 }
 
 int
@@ -367,7 +372,7 @@ getAccelRes(int16_t xAc, int16_t yAc, int16_t zAc) {
     int16_t     aRes;
 
     rmsAccel = getRmsXyz(xAc, yAc, zAc);
-    aRes = rmsAccel - 2098 - yAc;
+    aRes = rmsAccel - 2098;
 
     return aRes;
 }
@@ -398,10 +403,10 @@ main(void) {
 
     // Initialize the GPIO pins
     GPIO_DRV_Init(inputPins, outputPins);
-
+    warpPrint("hi\n");
     // Set pin mux mode,
     lowPowerPinStates();
-
+    warpPrint("hi\n");
     // Initialise sensors and screen
     initMMA8451Q(0x1D, kWarpDefaultSupplyVoltageMillivoltsMMA8451Q);
     OSA_TimeDelay(100);
@@ -409,7 +414,7 @@ main(void) {
     OSA_TimeDelay(100);
     initSSD1331();
     OSA_TimeDelay(100);
-
+    warpPrint("hi\n");
     // Display "Let's Ride""
     bootSplash();
 
@@ -470,28 +475,19 @@ main(void) {
     }
 
     drawPoint(35, 25, 8, 255);
-
-    volatile uint8_t statusRegisterPulse;
-    volatile int16_t Accel;
-    volatile int16_t currAvgGyro = 0;
-    volatile int16_t prevAvgGyro = 0;
-    volatile int16_t currDerivGyro = 0;
-    volatile int16_t prevDerivGyro = 0;
-    uint8_t statusRegisterL3GD20HFIFO;
+    point = true;
 
     timeStart = OSA_TimeGetMsec();
 
     tap = false;
-    dataReady = false;
 
     while (1) {
 
         if (tap) {
             tap = false;
             tapCount++;
-            tapCount %= 3;
+            tapCount %= 4;
             warpPrint("TAP\n");
-            warpPrint("%d\n", statusRegisterPulse);
         }
 
         readSensorRegisterL3GD20H(reg_L3GD20H_FIFO_SRC, 1);
@@ -530,17 +526,24 @@ main(void) {
 
         switch(tapCount) {
 
-            case 1: // Gradient only
+            case 1:
+                drawPoint(35, 25, 8, 255);
                 Accel = xAccel;
                 break;
 
-            case 2: // Cadence only
+            case 2:
+                drawPoint(35, 25, 8, 255);
                 Accel = yAccel;
                 break;
 
-            default: // Both
+            case 3:
+                drawPoint(35, 25, 8, 255);
                 Accel = zAccel;
                 break;
+
+            default:
+                break;
+
         }
 
         currTime = OSA_TimeGetMsec();
@@ -567,53 +570,62 @@ main(void) {
 
                 readSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_SRC, 1); // Clear interrupt flag
 
-                if ((statusRegisterValueAccel & 0b11000000) > 0) {
+                if (tapCount == 0) {
+                    warpPrint("hi");
+                    //printCadence(cadence, cadenceDigits, cadenceDigitsPrev);
+                }
+                else {
 
-                    returnSensorDataMMA8451QFIFO(readingsMMA8451QFIFO, kWarpSizesI2cBufferBytesMMA8451Q);
-                    j = 0;
-                    for (i = 0; i < nSamplesMMA8451Q; i++) {
-                        xAccel = iterativeAvg(xAccel, readingsMMA8451QFIFO[j], i+1);
-                        yAccel = iterativeAvg(yAccel, readingsMMA8451QFIFO[j+1], i+1);
-                        zAccel = iterativeAvg(zAccel, readingsMMA8451QFIFO[j+2], i+1);
-                        j+=3;
+                    if ((statusRegisterValueAccel & 0b11000000) > 0) {
+
+                        returnSensorDataMMA8451QFIFO(readingsMMA8451QFIFO, kWarpSizesI2cBufferBytesMMA8451Q);
+                        j = 0;
+                        for (i = 0; i < nSamplesMMA8451Q; i++) {
+                            xAccel = iterativeAvg(xAccel, readingsMMA8451QFIFO[j], i+1);
+                            yAccel = iterativeAvg(yAccel, readingsMMA8451QFIFO[j+1], i+1);
+                            zAccel = iterativeAvg(zAccel, readingsMMA8451QFIFO[j+2], i+1);
+                            j+=3;
+                        }
                     }
-                }
 
-                getGradient(xAccel, yAccel, zAccel, gradDigits);
+                    //xAccel = getAccelRes(xAccel, yAccel, zAccel);
+                    //warpPrint("xAccel: %d\n", xAccel);
 
-                convertFromRawMMA8451Q(Accel, digits);
+                    convertFromRawMMA8451Q(Accel, digits);
 
-                if (digitsPrev[0] != digits[0]) {
-                    if (digits[0] == 1) {
-                        drawMinus(10, 25, 8, 255);
-                        digitsPrev[0] = digits[0];
+                    if (digitsPrev[0] != digits[0]) {
+                        if (digits[0] == 1) {
+                            drawMinus(10, 25, 8, 255);
+                            digitsPrev[0] = digits[0];
+                        }
+                        else {
+                            drawMinus(10, 25, 8, 0);
+                            digitsPrev[0] = digits[0];
+                        }
                     }
-                    else {
-                        drawMinus(10, 25, 8, 0);
-                        digitsPrev[0] = digits[0];
+                    if (digitsPrev[1] != digits[1]) {
+                        drawGlyph(22, 25, 8, 255, digits[1]);
+                        digitsPrev[1] = digits[1];
                     }
-                }
-                if (digitsPrev[1] != digits[1]) {
-                    drawGlyph(22, 25, 8, 255, digits[1]);
-                    digitsPrev[1] = digits[1];
-                }
-                if (digitsPrev[2] != digits[2]) {
-                    drawGlyph(42, 25, 8, 255, digits[2]);
-                    digitsPrev[2] = digits[2];
-                }
-                if (digitsPrev[3] != digits[3]) {
-                    drawGlyph(55, 25, 8, 255, digits[3]);
-                    digitsPrev[3] = digits[3];
-                }
-                if (digitsPrev[4] != digits[4]) {
-                    drawGlyph(67, 25, 8, 255, digits[4]);
-                    digitsPrev[4] = digits[4];
-                }
-                if (digitsPrev[5] != digits[5]) {
-                    drawGlyph(80, 25, 8, 255, digits[5]);
-                    digitsPrev[5] = digits[5];
+                    if (digitsPrev[2] != digits[2]) {
+                        drawGlyph(42, 25, 8, 255, digits[2]);
+                        digitsPrev[2] = digits[2];
+                    }
+                    if (digitsPrev[3] != digits[3]) {
+                        drawGlyph(55, 25, 8, 255, digits[3]);
+                        digitsPrev[3] = digits[3];
+                    }
+                    if (digitsPrev[4] != digits[4]) {
+                        drawGlyph(67, 25, 8, 255, digits[4]);
+                        digitsPrev[4] = digits[4];
+                    }
+                    if (digitsPrev[5] != digits[5]) {
+                        drawGlyph(80, 25, 8, 255, digits[5]);
+                        digitsPrev[5] = digits[5];
+                    }
                 }
             }
+
             printIndicator *= -1;
             timeStart = currTime;
         }
