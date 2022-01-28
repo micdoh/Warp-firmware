@@ -115,29 +115,28 @@ uint8_t cadenceDigits[3] = {0, 0, 0};
 uint8_t cadenceDigitsPrev[3] = {9, 9, 9};
 uint8_t digits[6] = {0, 0, 0, 0, 0, 0};
 uint8_t digitsPrev[6] = {1, 9, 9, 9, 9, 9};
+uint8_t linesL[8] = {0, 0, 0, 20, 0, 0, 10, 0};
+uint8_t linese[28] = {10, 0 , 3, 0, 3, 0, 0, 3, 0, 3, 0, 6, 0, 6, 3, 10, 3, 10, 7, 10, 7, 10, 10, 6, 10, 6, 0, 6};
+uint8_t linest[16] = {0, 20, 0, 3, 0, 3, 3, 0, 3, 0, 10, 0, 0, 10, 10, 10};
+uint8_t linesApost[4] = {10, 20, 7, 17};
+uint8_t liness[28] = {7, 10, 3, 10, 3, 10, 0, 7, 0, 7, 3, 5, 3, 5, 7, 5, 7, 5, 10, 3, 10, 3, 7, 0, 7, 0, 3, 0};
+uint8_t linesR[28] = {0, 0, 0, 20, 0, 20, 8, 20, 8, 20, 10, 18, 10, 18, 10, 12, 10, 12, 8, 10, 8, 10, 0, 10, 7, 10, 10, 0};
+uint8_t linesi[8] = {0, 0, 0, 10, 0, 12, 0, 14};
+uint8_t linesd[16] = {10, 20, 10, 0, 10, 0, 0, 0, 0, 0, 0, 10, 0, 10, 10, 10};
 
 static void					   lowPowerPinStates(void);
 int16_t                        iterativeAvg(int16_t prev_avg, int16_t cur_elem, uint8_t n);
 
-void bootSplash(void)
-{
-    uint8_t linesL[8] = {0, 0, 0, 20, 0, 0, 10, 0};
-    uint8_t linese[28] = {10, 0 , 3, 0, 3, 0, 0, 3, 0, 3, 0, 6, 0, 6, 3, 10, 3, 10, 7, 10, 7, 10, 10, 6, 10, 6, 0, 6};
-    uint8_t linest[16] = {0, 20, 0, 3, 0, 3, 3, 0, 3, 0, 10, 0, 0, 10, 10, 10};
-    uint8_t linesApost[4] = {10, 20, 7, 17};
-    uint8_t liness[28] = {7, 10, 3, 10, 3, 10, 0, 7, 0, 7, 3, 5, 3, 5, 7, 5, 7, 5, 10, 3, 10, 3, 7, 0, 7, 0, 3, 0};
-    uint8_t linesR[28] = {0, 0, 0, 20, 0, 20, 8, 20, 8, 20, 10, 18, 10, 18, 10, 12, 10, 12, 8, 10, 8, 10, 0, 10, 7, 10, 10, 0};
-    uint8_t linesi[8] = {0, 0, 0, 10, 0, 12, 0, 14};
-    uint8_t linesd[16] = {10, 20, 10, 0, 10, 0, 0, 0, 0, 0, 0, 10, 0, 10, 10, 10};
+void bootSplash(void) {
     drawChar(0, 20, 255, linesL, 2, 2);
-    drawChar(12, 20, 255, linese, 7,2);
-    drawChar(24, 20, 255, linest, 4,2);
-    drawChar(34, 20, 255, linesApost, 1,2);
-    drawChar(40, 20, 255, liness, 7,2);
-    drawChar(40, 50, 255, linesR, 7,2);
-    drawChar(55, 50, 255, linesi, 2,2);
+    drawChar(12, 20, 255, linese, 7, 2);
+    drawChar(24, 20, 255, linest, 4, 2);
+    drawChar(34, 20, 255, linesApost, 1, 2);
+    drawChar(40, 20, 255, liness, 7, 2);
+    drawChar(40, 50, 255, linesR, 7, 2);
+    drawChar(55, 50, 255, linesi, 2, 2);
     drawChar(60, 50, 255, linesd, 4, 2);
-    drawChar(73, 50, 255, linese, 7,2);
+    drawChar(73, 50, 255, linese, 7, 2);
 }
 
 void printMMA8451QValues(void) {
@@ -330,16 +329,19 @@ printCadence(uint8_t cad, uint8_t * cadDigits, uint8_t * cadDigitsPrev) {
         clearScreen();
         point = false;
     }
-    if (cadDigitsPrev[0] != cadDigits[0]) {
-        drawGlyph(20, 20, 12, 255, cadDigits[0]);
+    if (cadDigits[0] != 0) {
+        drawGlyph(20, 30, 12, 255, cadDigits[0]);
         cadDigitsPrev[0] = cadDigits[0];
     }
+    else {
+        drawGlyph(20, 30, 12, 0, cadDigitsPrev[0]);
+    }
     if (cadDigitsPrev[1] != cadDigits[1]) {
-        drawGlyph(40, 20, 12, 255, cadDigits[1]);
+        drawGlyph(40, 30, 12, 255, cadDigits[1]);
         cadDigitsPrev[1] = cadDigits[1];
     }
     if (cadDigitsPrev[2] != cadDigits[2]) {
-        drawGlyph(60, 20, 12, 255, cadDigits[2]);
+        drawGlyph(60, 30, 12, 255, cadDigits[2]);
         cadDigitsPrev[2] = cadDigits[2];
     }
 }
@@ -469,8 +471,6 @@ main(void) {
         warpPrint("currAvgGyro,currDerivGyro,strokeCount,cadence\n");
     }
 
-
-
     timeStart = OSA_TimeGetMsec();
 
     tap = false;
@@ -523,25 +523,6 @@ main(void) {
             }
         }
 
-        switch(tapCount) {
-
-            case 1:
-                Accel = xAccel;
-                break;
-
-            case 2:
-                Accel = yAccel;
-                break;
-
-            case 3:
-                Accel = zAccel;
-                break;
-
-            default:
-                break;
-
-        }
-
         currTime = OSA_TimeGetMsec();
 
         if (currTime - timeStart >= 1000) {
@@ -585,40 +566,56 @@ main(void) {
                         }
                     }
 
+                    switch(tapCount) {
+                        case 1:
+                            Accel = zAccel;
+                        case 2:
+                            Accel = xAccel;
+                            break;
+                        case 3:
+                            Accel = yAccel;
+                            break;
+                        default:
+                            Accel = zAccel;
+                            break;
+                    }
+
+                    convertFromRawMMA8451Q(Accel, digits);
+
                     if (!point) {
                         clearScreen();
-                        drawPoint(35, 25, 8, 255);
+                        drawPoint(35, 30, 8, 255);
                         point = true;
                     }
 
                     if (digitsPrev[0] != digits[0]) {
                         if (digits[0] == 1) {
-                            drawMinus(10, 25, 8, 255);
+                            drawMinus(10, 30, 8, 255);
                             digitsPrev[0] = digits[0];
                         }
                         else {
-                            drawMinus(10, 25, 8, 0);
+                            drawMinus(10, 30, 8, 0);
                             digitsPrev[0] = digits[0];
                         }
                     }
                     if (digitsPrev[1] != digits[1]) {
-                        drawGlyph(22, 25, 8, 255, digits[1]);
+                        drawGlyph(22, 30, 8, 255, digits[1]);
                         digitsPrev[1] = digits[1];
                     }
                     if (digitsPrev[2] != digits[2]) {
-                        drawGlyph(42, 25, 8, 255, digits[2]);
+                        drawGlyph(42, 30, 8, 255, digits[2]);
                         digitsPrev[2] = digits[2];
                     }
                     if (digitsPrev[3] != digits[3]) {
-                        drawGlyph(55, 25, 8, 255, digits[3]);
+                        drawGlyph(55, 30, 8, 255, digits[3]);
                         digitsPrev[3] = digits[3];
                     }
                     if (digitsPrev[4] != digits[4]) {
-                        drawGlyph(67, 25, 8, 255, digits[4]);
+                        drawGlyph(67, 30, 8, 255, digits[4]);
                         digitsPrev[4] = digits[4];
                     }
                     if (digitsPrev[5] != digits[5]) {
-                        drawGlyph(80, 25, 8, 255, digits[5]);
+                        drawGlyph(80, 30, 8, 255, digits[5]);
                         digitsPrev[5] = digits[5];
                     }
                 }

@@ -34,7 +34,6 @@ writeCommand(uint8_t commandByte)
 
 	/*
 	 *	Drive /CS low.
-	 *
 	 *	Make sure there is a high-to-low transition by first driving high, delay, then drive low.
 	 */
 	GPIO_DRV_SetPinOutput(kSSD1331PinCSn);
@@ -68,7 +67,6 @@ writeMultipleCommand(uint8_t * commandBytes, uint8_t transferSize)
 
     /*
      *	Drive /CS low.
-     *
      *	Make sure there is a high-to-low transition by first driving high, delay, then drive low.
      */
     GPIO_DRV_SetPinOutput(kSSD1331PinCSn);
@@ -105,7 +103,6 @@ initSSD1331(void)
 {
 	/*
 	 *	Override Warp firmware's use of these pins.
-	 *
 	 *	Re-configure SPI to be on PTA8 and PTA9 for MOSI and SCK respectively.
 	 */
 	PORT_HAL_SetMuxMode(PORTA_BASE, 8u, kPortMuxAlt3);
@@ -115,7 +112,6 @@ initSSD1331(void)
 
 	/*
 	 *	Override Warp firmware's use of these pins.
-	 *
 	 *	Reconfigure to use as GPIO.
 	 */
 	PORT_HAL_SetMuxMode(PORTB_BASE, 11u, kPortMuxAsGpio);

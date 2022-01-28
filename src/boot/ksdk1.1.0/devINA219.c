@@ -76,7 +76,6 @@ writeSensorRegisterINA219(uint8_t deviceRegister, uint16_t payload)
 		.baudRate_kbps = gWarpI2cBaudRateKbps
 	};
 
-	//warpScaleSupplyVoltage(deviceINA219State.operatingVoltageMillivolts);
 	commandByte[0] = deviceRegister;
 	warpEnableI2Cpins();
 
@@ -128,7 +127,6 @@ readSensorRegisterINA219(uint8_t deviceRegister, int numberOfBytes)
 		.baudRate_kbps = gWarpI2cBaudRateKbps
 	};
 
-	//warpScaleSupplyVoltage(deviceINA219State.operatingVoltageMillivolts);
 	cmdBuf[0] = deviceRegister;
 	warpEnableI2Cpins();
 
@@ -156,8 +154,6 @@ printSensorDataINA219(bool currentFlag, uint8_t REGISTER)
 	uint16_t	readSensorRegisterValueMSB;
 	uint16_t	readSensorRegisterValueCombined;
 	WarpStatus	i2cReadStatus;
-
-	//warpScaleSupplyVoltage(deviceINA219State.operatingVoltageMillivolts);
 
 	i2cReadStatus = readSensorRegisterINA219(REGISTER, 2 /* numberOfBytes */);
 	readSensorRegisterValueMSB = deviceINA219State.i2cBuffer[0];
