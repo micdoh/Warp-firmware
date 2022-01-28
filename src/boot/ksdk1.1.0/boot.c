@@ -101,8 +101,8 @@ volatile int16_t prevAvgGyro = 0;
 volatile int16_t currDerivGyro = 0;
 volatile int16_t prevDerivGyro = 0;
 volatile uint8_t statusRegisterL3GD20HFIFO;
-const uint8_t nSamplesL3GD20H = kWarpSizesI2cBufferBytesL3GD20H/2;
-const uint8_t nSamplesMMA8451Q = kWarpSizesI2cBufferBytesMMA8451Q/6;
+const uint8_t nSamplesL3GD20H = kWarpSizesI2cBufferBytesL3GD20H/2; // only y-axis enabled
+const uint8_t nSamplesMMA8451Q = kWarpSizesI2cBufferBytesMMA8451Q/6; // all three axes
 int16_t readingsMMA8451QFIFO[kWarpSizesI2cBufferBytesMMA8451Q/2];
 int16_t readingsL3GD20HFIFO[kWarpSizesI2cBufferBytesL3GD20H/2];
 uint8_t statusRegisterValueGyro, statusRegisterValueAccel;
@@ -115,7 +115,7 @@ uint32_t currTime, timeStart;
 uint8_t cadenceDigits[3] = {0, 0, 0};
 uint8_t cadenceDigitsPrev[3] = {10, 10, 10};
 uint8_t digits[6] = {0, 0, 0, 0, 0, 0};
-uint8_t digitsPrev[6] = {10, 10, 10, 10, 10, 10,};
+uint8_t digitsPrev[6] = {1, 9 ,9 ,9 ,9 ,9};
 uint8_t linesL[8] = {0, 0, 0, 20, 0, 0, 10, 0};
 uint8_t linese[28] = {10, 0 , 3, 0, 3, 0, 0, 3, 0, 3, 0, 6, 0, 6, 3, 10, 3, 10, 7, 10, 7, 10, 10, 6, 10, 6, 0, 6};
 uint8_t linest[16] = {0, 20, 0, 3, 0, 3, 3, 0, 3, 0, 10, 0, 0, 10, 10, 10};
@@ -147,15 +147,19 @@ printCadence(uint8_t cad, uint8_t * cadDigits, uint8_t * cadDigitsPrev) {
     cadDigits[1] = (cad / 10) % 10;
     cadDigits[2] = cad % 10;
 
+    // Remove decimal point
     if (point) {
         clearScreen();
         point = false;
     }
+
+    // Print RPM in top right
     if (changeIcon) {
         printRPM();
         changeIcon = false;
     }
 
+    // Check if digit already displayed onscreen, to save time re-printing
     if (cadDigits[0] != 0) {
         drawGlyph(20, 30, 12, 255, cadDigits[0]);
         cadDigitsPrev[0] = cadDigits[0];
@@ -216,6 +220,7 @@ void printZ(void) {
     drawChar(0, 12, 255, linesZ, 3, 2);
 }
 
+// To be used if WARP_BUILD_BOOT_TO_ACCELSTREAM is enabled
 void printMMA8451QValues(void) {
     warpPrint("xAccel, yAccel, zAccel");
     while (1) {
@@ -234,6 +239,7 @@ void printMMA8451QValues(void) {
     }
 }
 
+// To be used if WARP_BUILD_BOOT_TO_GYROSTREAM is enabled
 void printL3GD20HValues(void) {
     warpPrint("yGyro, ");
     while (1) {
@@ -379,14 +385,14 @@ void
 PORTA_IRQHandler(void)
 {
     PORT_HAL_ClearPortIntFlag(PORTA_BASE); // Lower interrupt pin
-    tap = true;
+    tap = true; // Tap detected
 }
 
 void
 PORTB_IRQHandler(void)
 {
     PORT_HAL_ClearPortIntFlag(PORTB_BASE); // Lower interrupt pin
-    dataReady = true;
+    dataReady = true; // FIFO interrupt from gyro (to be implemented)
 }
 
 int
@@ -462,15 +468,17 @@ main(void) {
             j += nSamplesMMA8451Q;
         }
     }
+    // Calculations are correct for +/-4g
     int8_t X_OFFSET = (zeroRateAccelX/8) * 1;
     int8_t Y_OFFSET = (zeroRateAccelY/8) * 1;
     int8_t Z_OFFSET = ((2098-zeroRateAccelZ)/8) * 1;
+
+    // Write offsets to dedicated registers
     writeSensorRegisterMMA8451Q(reg_MMA8451Q_CTRL_REG1, 0x00); // Standby
-    writeSensorRegisterMMA8451Q(0x2F, X_OFFSET); // x_OFFSET
-    writeSensorRegisterMMA8451Q(0x30, Y_OFFSET); // Y_OFFSET
-    writeSensorRegisterMMA8451Q(0x31, Z_OFFSET); // Z_OFFSET
+    writeSensorRegisterMMA8451Q(0x2F, X_OFFSET);
+    writeSensorRegisterMMA8451Q(0x30, Y_OFFSET);
+    writeSensorRegisterMMA8451Q(0x31, Z_OFFSET);
     writeSensorRegisterMMA8451Q(reg_MMA8451Q_CTRL_REG1, val_MMA8451Q_CTRL_REG1); // Active
-    // Offset measurements complete and registers configured
 
     // Remove boot screen
     clearScreen();
@@ -519,42 +527,49 @@ main(void) {
 
     while (1) {
 
+        // If tap detected, increment counter to alter onscreen display
         if (tap) {
             tap = false;
             changeIcon = true;
             tapCount++;
             tapCount %= 4;
-            warpPrint("TAP\n");
         }
 
+        // Check status of gyro FIFO
         readSensorRegisterL3GD20H(reg_L3GD20H_FIFO_SRC, 1);
         statusRegisterL3GD20HFIFO = deviceL3GD20HState.i2cBuffer[0];
 
+        // If the FIFO is overrunning, threshold is met or 32 samples available
         if (
                 ((statusRegisterL3GD20HFIFO & 0b1000000) == 0b1000000) ||
                 ((statusRegisterL3GD20HFIFO & 0b0100000) == 0b0100000) ||
                 (statusRegisterL3GD20HFIFO == 32)) {
 
-            // Get average value of angular velocity from values in FIFO (default 32)
+            // Get values of angular velocity from values in FIFO (default 32)
             returnSensorDataL3GD20HFIFO(readingsL3GD20HFIFO, kWarpSizesI2cBufferBytesL3GD20H);
 
+            // Average all values that were in FIFO. Use iterative average to avoid overflow when summing.
             for (i = 0; i < nSamplesL3GD20H; i++) {
                 currAvgGyro = iterativeAvg(currAvgGyro, readingsL3GD20HFIFO[i], i+1);
             }
 
+            // Get gradient compared to previous and take average of 2 most recent gradients
             currDerivGyro = (currDerivGyro + currAvgGyro - prevAvgGyro) / 2;
             if (WARP_BUILD_BOOT_TO_CADENCESTREAM) {
                 warpPrint("%d,%d,,\n", currAvgGyro, currDerivGyro);
             }
-            prevAvgGyro = currAvgGyro;
 
+            // Every 3 FIFO reads, set previous gradient to current
             sampleCounter++;
             sampleCounter %= 3;
             if (sampleCounter == 0) {
                 prevDerivGyro = currDerivGyro;
             }
 
+            // 2 FIFO reads after measuring previous gradient, compare against current gradient
+            // (gap of 1 FIFO read to smooth noise and ensure change of polarity in ang. velocity is sustained)
             if (sampleCounter == 2) {
+                // Gradients must have opposite sign and absolute difference must exceed 10
                 if (((currDerivGyro > 0) && (prevDerivGyro < 0)) || ((currDerivGyro < 0) && (prevDerivGyro > 0))) {
                     if (((currDerivGyro-prevDerivGyro)*(currDerivGyro-prevDerivGyro)) > 100) {
                         strokeCount++;
@@ -563,16 +578,22 @@ main(void) {
                         }
                     }
                 }
+            prevDerivGyro = currDerivGyro;
+            prevAvgGyro = currAvgGyro;
             }
         }
 
         currTime = OSA_TimeGetMsec();
 
+        // Every 1 second...
         if (currTime - timeStart >= 1000) {
 
             time ++;
             time %= 4;
 
+            // Calculate cadence based on 3 most recent 4 second intervals
+            // Most recent interval is weighted more heavily (2:3:5 ratio)
+            // Multiplicative factor to ensure it is per minute
             if (time == 0) {
                 cadence = ((2 * strokeCount8SecsAgo) + (3 * strokeCount4SecsAgo) + (5 * strokeCount)) * 3 / 2;
                 strokeCount8SecsAgo = strokeCount4SecsAgo;
@@ -611,6 +632,7 @@ main(void) {
                         }
                     }
 
+                    // Set display option based on number of taps
                     switch(tapCount) {
                         case 1:
                             Accel = zAccel;
@@ -620,6 +642,7 @@ main(void) {
                                 point = true;
                                 changeIcon = false;
                             }
+                            break;
                         case 2:
                             Accel = xAccel;
                             if (changeIcon) {
