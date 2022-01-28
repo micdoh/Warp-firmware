@@ -119,8 +119,6 @@ uint8_t digitsPrev[6] = {1, 9, 9, 9, 9, 9};
 
 static void					   lowPowerPinStates(void);
 int16_t                        iterativeAvg(int16_t prev_avg, int16_t cur_elem, uint8_t n);
-uint16_t                       gapsqrt32(uint32_t a);
-uint16_t                       getRmsXyz(int16_t x, int16_t y, int16_t z);
 
 void bootSplash(void)
 {
@@ -323,34 +321,6 @@ iterativeAvg(int16_t prev_avg, int16_t cur_elem, uint8_t n) {
     return result;
 }
 
-// From https://gist.github.com/foobaz/3287f153d125277eefea
-uint16_t
-gapsqrt32(uint32_t a) {
-    uint32_t rem = 0, root = 0;
-
-    for (int i = 32 / 2; i > 0; i--) {
-        root <<= 1;
-        rem = (rem << 2) | (a >> (32 - 2));
-        a <<= 2;
-        if (root < rem) {
-            rem -= root | 1;
-            root += 2;
-        }
-    }
-    return root >> 1;
-}
-
-uint16_t
-getRmsXyz(int16_t x, int16_t y, int16_t z) {
-    int16_t     result;
-    uint32_t    sum;
-
-    sum = (x*x) + (y*y) + (z*z);
-    result = gapsqrt32(sum);
-
-    return result;
-}
-
 void
 printCadence(uint8_t cad, uint8_t * cadDigits, uint8_t * cadDigitsPrev) {
     cadDigits[0] = (cad / 100) % 10;
@@ -373,17 +343,6 @@ printCadence(uint8_t cad, uint8_t * cadDigits, uint8_t * cadDigitsPrev) {
         drawGlyph(60, 20, 12, 255, cadDigits[2]);
         cadDigitsPrev[2] = cadDigits[2];
     }
-}
-
-int
-getAccelRes(int16_t xAc, int16_t yAc, int16_t zAc) {
-    uint16_t    rmsAccel;
-    int16_t     aRes;
-
-    rmsAccel = getRmsXyz(xAc, yAc, zAc);
-    aRes = rmsAccel - 2098;
-
-    return aRes;
 }
 
 
