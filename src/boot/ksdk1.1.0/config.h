@@ -38,6 +38,8 @@
 #define		WARP_BUILD_ENABLE_FRDMKL03			    1
 #define		WARP_BUILD_ENABLE_SEGGER_RTT_PRINTF		1
 
+// For evaluation purposes.
+// Enable 1 of these at a time to retrieve data from the system.
 #define		WARP_BUILD_BOOT_TO_GYROSTREAM			0
 #define		WARP_BUILD_BOOT_TO_ACCELSTREAM			0
 #define		WARP_BUILD_BOOT_TO_CADENCESTREAM		0
@@ -69,7 +71,7 @@ typedef enum
 	kWarpMemoryCommonSpiBufferBytes			= 64,
     kWarpSizesI2cBufferBytesINA219			= 2,  // Default
     kWarpSizesI2cBufferBytesMMA8451Q		= 18, // 6x the FIFO sample watermark
-    kWarpSizesI2cBufferBytesL3GD20H         = 64, // 16 samples (y-axis only)
+    kWarpSizesI2cBufferBytesL3GD20H         = 64, // 32 samples (y-axis only)
 	kWarpSizesSpiBufferBytes				= 7,
 	kWarpSizesUartBufferBytes				= 8,
 

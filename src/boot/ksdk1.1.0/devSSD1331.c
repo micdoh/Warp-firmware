@@ -201,6 +201,11 @@ clearScreen(void){
     return 0;
 }
 
+/*
+ * Prints a character defined using an array of numbers.
+ * Each pair of numbers is a coordinate, with the origin at the bottom left of the region in which the character is drawn.
+ * StartCol and StartRow define the top
+ */
 int
 drawChar(uint8_t startCol, uint8_t startRow, uint8_t brightness, uint8_t * lines, uint8_t nLines, uint8_t weight){
     int j = 0;

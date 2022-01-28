@@ -243,7 +243,10 @@ returnSensorDataMMA8451QFIFO(int16_t * readings, uint8_t nBytes)
     return 0;
 }
 
-
+/*
+ * Take a raw counts reading and convert it into an array of digits representing the value in g's.
+ * This function is configured for +/-4g scale on MMA8451Q
+ */
 int
 convertFromRawMMA8451Q(int16_t raw, uint8_t * digits) {
     uint8_t sign = 0;

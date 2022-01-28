@@ -12,13 +12,11 @@ warp:
 	cp src/boot/ksdk1.1.0/config.h					build/ksdk1.1/work/demos/Warp/src/
 	cp src/boot/ksdk1.1.0/boot.c					build/ksdk1.1/work/demos/Warp/src/
 	cp src/boot/ksdk1.1.0/errstrs*					build/ksdk1.1/work/demos/Warp/src/
-	#cp src/boot/ksdk1.1.0/powermodes.c				build/ksdk1.1/work/demos/Warp/src/
 	cp src/boot/ksdk1.1.0/warp.h					build/ksdk1.1/work/demos/Warp/src/
 	cp src/boot/ksdk1.1.0/startup_MKL03Z4.S			build/ksdk1.1/work/platform/startup/MKL03Z4/gcc/startup_MKL03Z4.S
 	cp src/boot/ksdk1.1.0/gpio_pins.c				build/ksdk1.1/work/boards/Warp
 	cp src/boot/ksdk1.1.0/gpio_pins.h				build/ksdk1.1/work/boards/Warp
 	cp src/boot/ksdk1.1.0/config.h					build/ksdk1.1/work/boards/Warp
-	cp src/boot/ksdk1.1.0/glaux.h					build/ksdk1.1/work/boards/Warp
 	cp src/boot/ksdk1.1.0/CMakeLists.txt		build/ksdk1.1/work/demos/Warp/armgcc/Warp/CMakeLists.txt
 	cp src/boot/ksdk1.1.0/devMMA8451Q.*				build/ksdk1.1/work/demos/Warp/src/
 	cp src/boot/ksdk1.1.0/devL3GD20H.*				build/ksdk1.1/work/demos/Warp/src/

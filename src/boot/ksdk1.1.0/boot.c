@@ -84,6 +84,7 @@ uint8_t							    gWarpSpiCommonSinkBuffer[kWarpMemoryCommonSpiBufferBytes];
 volatile bool dataReady = false;
 volatile bool point = false;
 volatile bool tap = false;
+volatile bool changeIcon = true;
 volatile uint8_t tapCount = 0;
 volatile uint8_t strokeCount = 0;
 volatile uint8_t strokeCountPrev = 0;
@@ -112,9 +113,9 @@ uint8_t j;
 uint8_t k;
 uint32_t currTime, timeStart;
 uint8_t cadenceDigits[3] = {0, 0, 0};
-uint8_t cadenceDigitsPrev[3] = {9, 9, 9};
+uint8_t cadenceDigitsPrev[3] = {10, 10, 10};
 uint8_t digits[6] = {0, 0, 0, 0, 0, 0};
-uint8_t digitsPrev[6] = {1, 9, 9, 9, 9, 9};
+uint8_t digitsPrev[6] = {10, 10, 10, 10, 10, 10,};
 uint8_t linesL[8] = {0, 0, 0, 20, 0, 0, 10, 0};
 uint8_t linese[28] = {10, 0 , 3, 0, 3, 0, 0, 3, 0, 3, 0, 6, 0, 6, 3, 10, 3, 10, 7, 10, 7, 10, 10, 6, 10, 6, 0, 6};
 uint8_t linest[16] = {0, 20, 0, 3, 0, 3, 3, 0, 3, 0, 10, 0, 0, 10, 10, 10};
@@ -123,9 +124,54 @@ uint8_t liness[28] = {7, 10, 3, 10, 3, 10, 0, 7, 0, 7, 3, 5, 3, 5, 7, 5, 7, 5, 1
 uint8_t linesR[28] = {0, 0, 0, 20, 0, 20, 8, 20, 8, 20, 10, 18, 10, 18, 10, 12, 10, 12, 8, 10, 8, 10, 0, 10, 7, 10, 10, 0};
 uint8_t linesi[8] = {0, 0, 0, 10, 0, 12, 0, 14};
 uint8_t linesd[16] = {10, 20, 10, 0, 10, 0, 0, 0, 0, 0, 0, 10, 0, 10, 10, 10};
+uint8_t linesRs[28] = {0, 0, 0, 10, 0, 10, 4, 10, 4, 10, 5, 9, 5, 9, 5, 6, 5, 6, 4, 5, 4, 5, 0, 5, 4, 5, 5, 0};
+uint8_t linesPs[24] = {0, 0, 0, 10, 0, 10, 4, 10, 4, 10, 5, 9, 5, 9, 5, 6, 5, 6, 4, 5, 4, 5, 0, 5};
+uint8_t linesMs[16] = {0, 0, 0, 10, 0, 10, 5, 5, 5, 5, 10, 10, 10, 10, 10, 0};
+uint8_t linesX[8] = {0, 10, 10, 0, 0, 0, 10, 10};
+uint8_t linesY[8] = {0, 10, 5, 5, 0, 0, 10, 10};
+uint8_t linesZ[12] = {0, 10, 10, 10, 10, 10, 0, 0, 0, 0, 10, 0};
 
 static void					   lowPowerPinStates(void);
 int16_t                        iterativeAvg(int16_t prev_avg, int16_t cur_elem, uint8_t n);
+
+int16_t
+iterativeAvg(int16_t prev_avg, int16_t cur_elem, uint8_t n) {
+    uint16_t  result;
+    result = (((prev_avg * (n-1)) + cur_elem) / n );
+    return result;
+}
+
+void
+printCadence(uint8_t cad, uint8_t * cadDigits, uint8_t * cadDigitsPrev) {
+    cadDigits[0] = (cad / 100) % 10;
+    cadDigits[1] = (cad / 10) % 10;
+    cadDigits[2] = cad % 10;
+
+    if (point) {
+        clearScreen();
+        point = false;
+    }
+    if (changeIcon) {
+        printRPM();
+        changeIcon = false;
+    }
+
+    if (cadDigits[0] != 0) {
+        drawGlyph(20, 30, 12, 255, cadDigits[0]);
+        cadDigitsPrev[0] = cadDigits[0];
+    }
+    else {
+        drawGlyph(20, 30, 12, 0, cadDigitsPrev[0]);
+    }
+    if (cadDigitsPrev[1] != cadDigits[1]) {
+        drawGlyph(40, 30, 12, 255, cadDigits[1]);
+        cadDigitsPrev[1] = cadDigits[1];
+    }
+    if (cadDigitsPrev[2] != cadDigits[2]) {
+        drawGlyph(60, 30, 12, 255, cadDigits[2]);
+        cadDigitsPrev[2] = cadDigits[2];
+    }
+}
 
 void bootSplash(void) {
     drawChar(0, 20, 255, linesL, 2, 2);
@@ -139,6 +185,37 @@ void bootSplash(void) {
     drawChar(73, 50, 255, linese, 7, 2);
 }
 
+void resetIcon(void) {
+    clearScreen();
+    digitsPrev[0] = 10;
+    digitsPrev[1] = 10;
+    digitsPrev[2] = 10;
+    digitsPrev[3] = 10;
+    digitsPrev[4] = 10;
+    digitsPrev[5] = 10;
+}
+
+void printRPM(void) {
+    drawChar(0, 12, 255, linesRs, 7, 2);
+    drawChar(12, 12, 255, linesPs, 6, 2);
+    drawChar(24, 12, 255, linesMs, 4, 2);
+}
+
+void printX(void) {
+    resetIcon();
+    drawChar(0, 12, 255, linesX, 2, 2);
+}
+
+void printY(void) {
+    resetIcon();
+    drawChar(0, 12, 255, linesY, 2, 2);
+}
+
+void printZ(void) {
+    resetIcon();
+    drawChar(0, 12, 255, linesZ, 3, 2);
+}
+
 void printMMA8451QValues(void) {
     warpPrint("xAccel, yAccel, zAccel");
     while (1) {
@@ -148,10 +225,10 @@ void printMMA8451QValues(void) {
         if ((statusRegisterValueAccel & 0b11000000) > 0) {
 
             returnSensorDataMMA8451QFIFO(readingsMMA8451QFIFO, kWarpSizesI2cBufferBytesMMA8451Q);
-
+            j = 0;
             for (i = 0; i < nSamplesMMA8451Q; i++) {
-                warpPrint("%d, %d, %d\n", readingsMMA8451QFIFO[i], readingsMMA8451QFIFO[i + 1],
-                          readingsMMA8451QFIFO[i + 2]);
+                warpPrint("%d, %d, %d\n", readingsMMA8451QFIFO[j], readingsMMA8451QFIFO[j + 1],readingsMMA8451QFIFO[j + 2]);
+                j += 3;
             }
         }
     }
@@ -312,41 +389,6 @@ PORTB_IRQHandler(void)
     dataReady = true;
 }
 
-int16_t
-iterativeAvg(int16_t prev_avg, int16_t cur_elem, uint8_t n) {
-    uint16_t  result;
-    result = (((prev_avg * (n-1)) + cur_elem) / n );
-    return result;
-}
-
-void
-printCadence(uint8_t cad, uint8_t * cadDigits, uint8_t * cadDigitsPrev) {
-    cadDigits[0] = (cad / 100) % 10;
-    cadDigits[1] = (cad / 10) % 10;
-    cadDigits[2] = cad % 10;
-
-    if (point) {
-        clearScreen();
-        point = false;
-    }
-    if (cadDigits[0] != 0) {
-        drawGlyph(20, 30, 12, 255, cadDigits[0]);
-        cadDigitsPrev[0] = cadDigits[0];
-    }
-    else {
-        drawGlyph(20, 30, 12, 0, cadDigitsPrev[0]);
-    }
-    if (cadDigitsPrev[1] != cadDigits[1]) {
-        drawGlyph(40, 30, 12, 255, cadDigits[1]);
-        cadDigitsPrev[1] = cadDigits[1];
-    }
-    if (cadDigitsPrev[2] != cadDigits[2]) {
-        drawGlyph(60, 30, 12, 255, cadDigits[2]);
-        cadDigitsPrev[2] = cadDigits[2];
-    }
-}
-
-
 int
 main(void) {
     WarpStatus status;
@@ -479,6 +521,7 @@ main(void) {
 
         if (tap) {
             tap = false;
+            changeIcon = true;
             tapCount++;
             tapCount %= 4;
             warpPrint("TAP\n");
@@ -545,10 +588,12 @@ main(void) {
 
                 readSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_SRC, 1); // Clear interrupt flag
 
+                // Display cadence calculation
                 if (tapCount == 0) {
                     printCadence(cadence, cadenceDigits, cadenceDigitsPrev);
                 }
 
+                // Display acceleration on selected axis
                 else {
 
                     readSensorRegisterMMA8451Q(reg_MMA8451Q_STATUS, 1);
@@ -569,24 +614,43 @@ main(void) {
                     switch(tapCount) {
                         case 1:
                             Accel = zAccel;
+                            if (changeIcon) {
+                                printZ();
+                                drawPoint(35, 30, 8, 255);
+                                point = true;
+                                changeIcon = false;
+                            }
                         case 2:
                             Accel = xAccel;
+                            if (changeIcon) {
+                                printX();
+                                drawPoint(35, 30, 8, 255);
+                                point = true;
+                                changeIcon = false;
+                            }
                             break;
                         case 3:
                             Accel = yAccel;
+                            if (changeIcon) {
+                                printY();
+                                drawPoint(35, 30, 8, 255);
+                                point = true;
+                                changeIcon = false;
+                            }
                             break;
                         default:
                             Accel = zAccel;
+                            if (changeIcon) {
+                                printZ();
+                                drawPoint(35, 30, 8, 255);
+                                point = true;
+                                changeIcon = false;
+                            }
                             break;
                     }
 
+                    // Convert from counts into g's and return array of digits for printing onscreen
                     convertFromRawMMA8451Q(Accel, digits);
-
-                    if (!point) {
-                        clearScreen();
-                        drawPoint(35, 30, 8, 255);
-                        point = true;
-                    }
 
                     if (digitsPrev[0] != digits[0]) {
                         if (digits[0] == 1) {
@@ -625,6 +689,7 @@ main(void) {
             timeStart = currTime;
         }
 
+        // If characterising current consumption
         if (WARP_BUILD_BOOT_INA219) {
             printSensorDataINA219(true, 0x01);  // Print current (mA) reading
         }
