@@ -1,5 +1,10 @@
 # Bicycle Computer (based on [Warp](https://github.com/physical-computation/Warp-hardware))
 
+**Name:** Michael Doherty
+
+**College:** N/A
+
+**CRSid:** md934
 
 ![image](doc/letsRide.jpg)
 ![image](doc/RPM.jpg)
