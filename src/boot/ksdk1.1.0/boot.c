@@ -81,6 +81,7 @@ char							    gWarpPrintBuffer[kWarpDefaultPrintBufferSizeBytes];
 uint8_t							    gWarpSpiCommonSourceBuffer[kWarpMemoryCommonSpiBufferBytes];
 uint8_t							    gWarpSpiCommonSinkBuffer[kWarpMemoryCommonSpiBufferBytes];
 
+volatile bool dataReady = false;
 volatile bool point = false;
 volatile bool tap = false;
 volatile uint8_t tapCount = 0;
@@ -112,7 +113,7 @@ uint8_t j;
 uint8_t k;
 uint32_t currTime, timeStart;
 uint8_t cadenceDigits[3] = {0, 0, 0};
-uint8_t cadenceDigitsPrev[3] = {1, 1, 1};
+uint8_t cadenceDigitsPrev[3] = {9, 9, 9};
 uint8_t digits[6] = {0, 0, 0, 0, 0, 0};
 uint8_t digitsPrev[6] = {1, 9, 9, 9, 9, 9};
 
@@ -308,6 +309,13 @@ PORTA_IRQHandler(void)
     tap = true;
 }
 
+void
+PORTB_IRQHandler(void)
+{
+    PORT_HAL_ClearPortIntFlag(PORTB_BASE); // Lower interrupt pin
+    dataReady = true;
+}
+
 int16_t
 iterativeAvg(int16_t prev_avg, int16_t cur_elem, uint8_t n) {
     uint16_t  result;
@@ -350,19 +358,20 @@ printCadence(uint8_t cad, uint8_t * cadDigits, uint8_t * cadDigitsPrev) {
     cadDigits[2] = cad % 10;
 
     if (point) {
-        drawPoint(35, 25, 8, 0);
+        clearScreen();
+        point = false;
     }
     if (cadDigitsPrev[0] != cadDigits[0]) {
         drawGlyph(20, 20, 12, 255, cadDigits[0]);
-        digitsPrev[4] = cadDigits[4];
+        cadDigitsPrev[0] = cadDigits[0];
     }
     if (cadDigitsPrev[1] != cadDigits[1]) {
         drawGlyph(40, 20, 12, 255, cadDigits[1]);
-        digitsPrev[5] = cadDigits[5];
+        cadDigitsPrev[1] = cadDigits[1];
     }
     if (cadDigitsPrev[2] != cadDigits[2]) {
         drawGlyph(60, 20, 12, 255, cadDigits[2]);
-        digitsPrev[4] = cadDigits[4];
+        cadDigitsPrev[2] = cadDigits[2];
     }
 }
 
@@ -398,15 +407,15 @@ main(void) {
      */
     SEGGER_RTT_ConfigUpBuffer(0, NULL, NULL, 0, SEGGER_RTT_MODE_NO_BLOCK_TRIM);
 
-    warpPrint("\n\n\n\rBooting\n\n");
-    OSA_TimeDelay(1000);
+    //warpPrint("\n\n\n\rBooting\n\n");
+    //OSA_TimeDelay(1000);
 
     // Initialize the GPIO pins
     GPIO_DRV_Init(inputPins, outputPins);
-    warpPrint("hi\n");
+
     // Set pin mux mode,
     lowPowerPinStates();
-    warpPrint("hi\n");
+
     // Initialise sensors and screen
     initMMA8451Q(0x1D, kWarpDefaultSupplyVoltageMillivoltsMMA8451Q);
     OSA_TimeDelay(100);
@@ -414,7 +423,7 @@ main(void) {
     OSA_TimeDelay(100);
     initSSD1331();
     OSA_TimeDelay(100);
-    warpPrint("hi\n");
+
     // Display "Let's Ride""
     bootSplash();
 
@@ -474,9 +483,6 @@ main(void) {
         printL3GD20HValues();
     }
 
-    drawPoint(35, 25, 8, 255);
-    point = true;
-
     timeStart = OSA_TimeGetMsec();
 
     tap = false;
@@ -527,17 +533,17 @@ main(void) {
         switch(tapCount) {
 
             case 1:
-                drawPoint(35, 25, 8, 255);
+
                 Accel = xAccel;
                 break;
 
             case 2:
-                drawPoint(35, 25, 8, 255);
+
                 Accel = yAccel;
                 break;
 
             case 3:
-                drawPoint(35, 25, 8, 255);
+
                 Accel = zAccel;
                 break;
 
@@ -551,19 +557,15 @@ main(void) {
         if (currTime - timeStart >= 1000) {
 
             time ++;
-            time %= 3;
+            time %= 4;
 
             if (time == 0) {
-                stroke3Secs2 = stroke3Secs1;
+                cadence = ((2 * stroke3Secs3) + (3 * stroke3Secs2) + (5 * strokeCount)) * 3 / 2;
                 stroke3Secs3 = stroke3Secs2;
-                stroke3Secs1 = strokeCount;
-                cadence = ((2 * stroke3Secs3) + (3 * stroke3Secs2) + (5 * strokeCount)) * 2;
+                stroke3Secs2 = strokeCount;
                 warpPrint("CADENCE: %d\n", cadence);
                 strokeCount = 0;
             }
-
-            readSensorRegisterMMA8451Q(reg_MMA8451Q_STATUS, 1);
-            statusRegisterValueAccel = deviceMMA8451QState.i2cBuffer[0];
 
             // Update screen every 2 secs
             if (printIndicator == 1) {
@@ -571,10 +573,13 @@ main(void) {
                 readSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_SRC, 1); // Clear interrupt flag
 
                 if (tapCount == 0) {
-                    warpPrint("hi");
-                    //printCadence(cadence, cadenceDigits, cadenceDigitsPrev);
+                    printCadence(cadence, cadenceDigits, cadenceDigitsPrev);
                 }
+
                 else {
+
+                    readSensorRegisterMMA8451Q(reg_MMA8451Q_STATUS, 1);
+                    statusRegisterValueAccel = deviceMMA8451QState.i2cBuffer[0];
 
                     if ((statusRegisterValueAccel & 0b11000000) > 0) {
 
@@ -588,10 +593,13 @@ main(void) {
                         }
                     }
 
-                    //xAccel = getAccelRes(xAccel, yAccel, zAccel);
-                    //warpPrint("xAccel: %d\n", xAccel);
+                    Accel = getAccelRes(xAccel, yAccel, zAccel);
 
-                    convertFromRawMMA8451Q(Accel, digits);
+                    if (!point) {
+                        clearScreen();
+                        drawPoint(35, 25, 8, 255);
+                        point = true;
+                    }
 
                     if (digitsPrev[0] != digits[0]) {
                         if (digits[0] == 1) {
