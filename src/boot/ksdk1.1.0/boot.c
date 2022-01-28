@@ -456,8 +456,7 @@ main(void) {
             warpPrint("\rINA219 configuration failed...\n");
         }
 
-        /* Checking register values */
-
+        // Checking register values
         printSensorDataINA219(false, 0x00);  // Configuration
         printSensorDataINA219(false, 0x01);  // Shunt voltage
         printSensorDataINA219(false, 0x02);  // Bus Voltage
@@ -630,131 +629,8 @@ main(void) {
         }
 
         if (WARP_BUILD_BOOT_INA219) {
-            /* Print current (mA) reading */
-            printSensorDataINA219(true, 0x01);  // Current
+            printSensorDataINA219(true, 0x01);  // Print current (mA) reading
         }
     }
     return 0;
 }
-
-//warpPrint("PrevAvg: %d\n", prevAvgGyro);
-//warpPrint("CurrAvg: %d\n", currAvgGyro);
-//warpPrint("PrevDeriv: %d\n", prevDerivGyro);
-//warpPrint("CurrDeriv: %d\n", currDerivGyro);
-//warpPrint("SampleCounter: %d\n", sampleCounter);
-
-    //warpPrint("%d, %d, %d, %d, %d, %d\n", xGyro, yGyro, zGyro, xAccel, yAccel, zAccel);
-
-/*
-    while (j < 3)
-    {
-        uint32_t currTime, timeStart;
-
-        timeStart = OSA_TimeGetMsec();
-
-        do {
-            currTime = OSA_TimeGetMsec(); // Get current time stamp
-            returnSensorDataMMA8451Q(readingsMMA8451Q);
-            returnSensorDataL3GD20H(readingsL3GD20H);
-            warpPrint("%d %d %d %d %d %d\n", readingsMMA8451Q[0], readingsMMA8451Q[1], readingsMMA8451Q[2], readingsL3GD20H[0], readingsL3GD20H[1], readingsL3GD20H[2]);
-        } while (1000 >= (currTime - timeStart));
-
-        j++;
-    }
-    */
-
-    //warpPrint("A:");
-    //printSensorDataL3GD20H(0);
-    //printSensorDataMMA8451Q(0);
-    //warpPrint("\n");
-
-    //readSensorRegisterL3GD20H(0x27, 1); // No FIFO
-
-/*
-        if (((statusRegisterValueGyro & 0b00001000) == 8)
-        && ((statusRegisterValueAccel & 0b00001000) == 8)) {
-
-            returnSensorDataL3GD20H(readingsL3GD20H);
-            xGyro = readingsL3GD20H[0];// - zeroRateGyroX;
-            yGyro = readingsL3GD20H[1];// - zeroRateGyroY;
-            zGyro = readingsL3GD20H[2];// - zeroRateGyroZ;
-
-            returnSensorDataMMA8451Q(readingsMMA8451Q);
-            xAccel = readingsMMA8451Q[0];
-            yAccel = readingsMMA8451Q[1];
-            zAccel = readingsMMA8451Q[2];
-
-        }
-*/
-
-
-
-
-/*
-uint8_t digits[6];
-int16_t test = 0b1111111111111111;
-convertFromRawMMA8451Q(test, digits);
-warpPrint("Test digits: %d %d %d %d %d %d\n", digits[0], digits[1], digits[2], digits[3], digits[4], digits[5]);
-*/
-/*
- *             warpPrint("I2C Buffer post-read: %d, %d, %d, %d, %d, %d\n",
-                  deviceMMA8451QState.i2cBuffer[0],
-                  deviceMMA8451QState.i2cBuffer[1],
-                  deviceMMA8451QState.i2cBuffer[2],
-                  deviceMMA8451QState.i2cBuffer[3],
-                  deviceMMA8451QState.i2cBuffer[4],
-                  deviceMMA8451QState.i2cBuffer[5]);
-
-            volatile uint8_t statusRegisterPulse;
-            volatile uint8_t statusRegisterInt;
-            readSensorRegisterMMA8451Q(reg_MMA8451Q_PULSE_SRC, 1); // Clear interrupt flag
-            statusRegisterPulse = deviceMMA8451QState.i2cBuffer[0];
-            readSensorRegisterMMA8451Q(reg_MMA8451Q_INT_SOURCE, 1);
-            statusRegisterInt = deviceMMA8451QState.i2cBuffer[0];
- */
-
-/*
-j = 0;
-while (j < 100) {
-
-    readSensorRegisterL3GD20H(reg_L3GD20H_FIFO_SRC, 1);
-    statusRegisterValueGyro = deviceL3GD20HState.i2cBuffer[0];
-    warpPrint("Gyro %d\n", statusRegisterValueGyro);
-    if ((statusRegisterValueGyro & 0b11000000) > 0) {
-
-        returnSensorDataL3GD20HFIFO(readingsL3GD20HFIFO, kWarpSizesI2cBufferBytesL3GD20H);
-        k = 0;
-
-        for (i = 0; i < nSamplesL3GD20H; i++) {
-            //zeroRateGyroX = iterativeAvg(zeroRateGyroX, readingsL3GD20HFIFO[k], j + i + 1);
-            zeroRateGyroY = iterativeAvg(zeroRateGyroY, readingsL3GD20HFIFO[k + 1], j + i + 1);
-            //zeroRateGyroZ = iterativeAvg(zeroRateGyroZ, readingsL3GD20HFIFO[k + 2], j + i + 1);
-            k += 3;
-        }
-        j += nSamplesL3GD20H;
-    }
-}
-*/
-/*
- *     //warpPrint("ZERO: %d, %d, %d\n", zeroRateAccelX, zeroRateAccelY, zeroRateAccelZ);
-    //warpPrint("OFFSETS: %d, %d, %d\n", X_OFFSET, Y_OFFSET, Z_OFFSET);
- */
-
-/*
-readSensorRegisterL3GD20H(reg_L3GD20H_FIFO_SRC, 1); // FIFO
-statusRegisterValueGyro = deviceL3GD20HState.i2cBuffer[0];
-
-if ((statusRegisterValueGyro & 0b11000000) > 0) {
-
-    returnSensorDataL3GD20HFIFO(readingsL3GD20HFIFO, kWarpSizesI2cBufferBytesL3GD20H);
-    j = 0;
-    for (i = 0; i < nSamplesL3GD20H; i++) {
-        sampleCounter += 1;
-        //warpPrint("%u, %d, %d, %d\n", sampleCount, readingsL3GD20HFIFO[j], readingsL3GD20HFIFO[j+1], readingsL3GD20HFIFO[j+2]);
-        j+=3;
-    }
-    xGyro = readingsL3GD20HFIFO[0];
-    yGyro = readingsL3GD20HFIFO[1];
-    zGyro = readingsL3GD20HFIFO[2];
-}
- */
