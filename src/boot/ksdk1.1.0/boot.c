@@ -91,9 +91,8 @@ volatile uint8_t strokeCount6 = 0;
 volatile uint8_t sampleCounter = 0;
 volatile uint8_t cadence = 0;
 volatile uint8_t printIndicator = 1;
-volatile uint8_t stroke3Secs1 = 0;
-volatile uint8_t stroke3Secs2 = 0;
-volatile uint8_t stroke3Secs3 = 0;
+volatile uint8_t strokeCount4SecsAgo = 0;
+volatile uint8_t strokeCount8SecsAgo = 0;
 volatile uint8_t time = 0;
 volatile int16_t Accel;
 volatile int16_t currAvgGyro = 0;
@@ -442,6 +441,37 @@ main(void) {
         printL3GD20HValues();
     }
 
+    if (WARP_BUILD_BOOT_INA219) {
+        /* Configuration value 0b000001000101:
+         * - 0-16V
+         * - PGA Gain 1
+         * - +/- 40mV range
+         * - 12-bit ADC resolution
+         * - 532 us conversion time
+         * - 1 sample per measurement
+        */
+        initINA219(0x40, 3300);
+        status = writeSensorRegisterINA219(0x00, 0b000001000101);
+        if (status != kWarpStatusOK) {
+            warpPrint("\rINA219 configuration failed...\n");
+        }
+
+        /* Checking register values */
+
+        printSensorDataINA219(false, 0x00);  // Configuration
+        printSensorDataINA219(false, 0x01);  // Shunt voltage
+        printSensorDataINA219(false, 0x02);  // Bus Voltage
+        printSensorDataINA219(false, 0x03);  // Power
+        printSensorDataINA219(false, 0x04);  // Current
+        printSensorDataINA219(false, 0x05);  // Calibration
+    }
+
+    if (WARP_BUILD_BOOT_TO_CADENCESTREAM) {
+        warpPrint("currAvgGyro,currDerivGyro,strokeCount,cadence\n");
+    }
+
+
+
     timeStart = OSA_TimeGetMsec();
 
     tap = false;
@@ -471,6 +501,9 @@ main(void) {
             }
 
             currDerivGyro = (currDerivGyro + currAvgGyro - prevAvgGyro) / 2;
+            if (WARP_BUILD_BOOT_TO_CADENCESTREAM) {
+                warpPrint("%d,%d,,\n", currAvgGyro, currDerivGyro);
+            }
             prevAvgGyro = currAvgGyro;
 
             sampleCounter++;
@@ -483,7 +516,9 @@ main(void) {
                 if (((currDerivGyro > 0) && (prevDerivGyro < 0)) || ((currDerivGyro < 0) && (prevDerivGyro > 0))) {
                     if (((currDerivGyro-prevDerivGyro)*(currDerivGyro-prevDerivGyro)) > 100) {
                         strokeCount++;
-                        warpPrint("!!!!!!! %d\n", strokeCount);
+                        if (WARP_BUILD_BOOT_TO_CADENCESTREAM) {
+                            warpPrint(",,%d,\n", strokeCount);
+                        }
                     }
                 }
             }
@@ -492,17 +527,14 @@ main(void) {
         switch(tapCount) {
 
             case 1:
-
                 Accel = xAccel;
                 break;
 
             case 2:
-
                 Accel = yAccel;
                 break;
 
             case 3:
-
                 Accel = zAccel;
                 break;
 
@@ -519,11 +551,13 @@ main(void) {
             time %= 4;
 
             if (time == 0) {
-                cadence = ((2 * stroke3Secs3) + (3 * stroke3Secs2) + (5 * strokeCount)) * 3 / 2;
-                stroke3Secs3 = stroke3Secs2;
-                stroke3Secs2 = strokeCount;
-                warpPrint("CADENCE: %d\n", cadence);
+                cadence = ((2 * strokeCount8SecsAgo) + (3 * strokeCount4SecsAgo) + (5 * strokeCount)) * 3 / 2;
+                strokeCount8SecsAgo = strokeCount4SecsAgo;
+                strokeCount4SecsAgo = strokeCount;
                 strokeCount = 0;
+                if (WARP_BUILD_BOOT_TO_CADENCESTREAM) {
+                    warpPrint(",,,%d\n", cadence);
+                }
             }
 
             // Update screen every 2 secs
@@ -551,8 +585,6 @@ main(void) {
                             j+=3;
                         }
                     }
-
-                    Accel = getAccelRes(xAccel, yAccel, zAccel);
 
                     if (!point) {
                         clearScreen();
@@ -595,6 +627,11 @@ main(void) {
 
             printIndicator *= -1;
             timeStart = currTime;
+        }
+
+        if (WARP_BUILD_BOOT_INA219) {
+            /* Print current (mA) reading */
+            printSensorDataINA219(true, 0x01);  // Current
         }
     }
     return 0;
@@ -650,33 +687,7 @@ main(void) {
         }
 */
 
-/* Configuration value 0b000001000101:
-    - 0-16V
-    - PGA Gain 1
-    - +/- 40mV range
-    - 12-bit ADC resolution
-    - 532 us conversion time
-    - 1 sample per measurement
-*/
-//initINA219(0x40, 3300);
-//status = writeSensorRegisterINA219(0x00, 0b000001000101);
-//if (status != kWarpStatusOK) {
-//    warpPrint("\rINA219 configuration failed...\n");
-//}
 
-/* Checking register values */
-/*
-printSensorDataINA219(false, 0x00);  // Configuration
-printSensorDataINA219(false, 0x01);  // Shunt voltage
-printSensorDataINA219(false, 0x02);  // Bus Voltage
-printSensorDataINA219(false, 0x03);  // Power
-printSensorDataINA219(false, 0x04);  // Current
-printSensorDataINA219(false, 0x05);  // Calibration
-*/
-/* Print 1000 current (mA) readings */
-//for (int i = 0; i < 1000; i++)
-//{
-//    p
 
 
 /*

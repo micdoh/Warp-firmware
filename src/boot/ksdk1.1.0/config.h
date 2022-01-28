@@ -40,7 +40,8 @@
 
 #define		WARP_BUILD_BOOT_TO_GYROSTREAM			0
 #define		WARP_BUILD_BOOT_TO_ACCELSTREAM			0
-#define		WARP_BUILD_BOOT_TO_CADENCESTREAM		0
+#define		WARP_BUILD_BOOT_TO_CADENCESTREAM		1
+#define		WARP_BUILD_BOOT_INA219		            0
 
 typedef enum
 {
@@ -101,7 +102,7 @@ typedef enum
     val_MMA8451Q_XYZ_DATA_CFG =     0b00000001, // No high-pass filter, +/-4g range
     val_MMA8451Q_PULSE_CFG =        0b01010000, // Single pulse enabled for z axis. Pulse event flags are latched into the PULSE_SRC register. Reading of the PULSE_SRC register clears the event flag.
     val_MMA8451Q_PULSE_THSX =       0x19,       // Set X Threshold to 1.575g (LSB is 8g/127 = 0.063g)
-    val_MMA8451Q_PULSE_THSY =       0x19,       // 0x019 Set Y Threshold to 1.575g
+    val_MMA8451Q_PULSE_THSY =       0x19,       // Set Y Threshold to 1.575g
     val_MMA8451Q_PULSE_THSZ =       0x2F,       // Set Z Threshold to 2.961g (LSB is 8g/127 = 0.063g)
     val_MMA8451Q_PULSE_TMLT =       0x50,       // 50ms (80 x 0.625ms) time limit for pulse to exceed threshold and drop below
     val_MMA8451Q_HP_FILTER_CUTOFF = 0b00010000, // Enable LPF for pulse detection. Pulse time limit step set to 0.625ms (otherwise 2.5ms)
