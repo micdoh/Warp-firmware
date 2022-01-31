@@ -6,7 +6,7 @@
 
 **CRSid:** md934
 
-![image](../../Warp-firmware/tree/Bicycle-computer/doc/letsRide.jpg)
+![image](../../tree/Bicycle-computer/doc/letsRide.jpg)
 ![image](../Warp-firmware/doc/RPM.jpg)
 
 ## Building the application
