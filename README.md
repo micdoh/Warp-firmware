@@ -5,7 +5,7 @@
 **College:** N/A
 
 **CRSid:** md934
-![Alt text](doc/letsRide.jpg)
+![Alt text](https://github.com/micdoh/Warp-firmware/blob/Bicycle-computer/doc/letsRide.JPG)
 ![image](../../tree/Bicycle-computer/doc/letsRide.jpg)
 ![image](../Warp-firmware/doc/RPM.jpg)
 
