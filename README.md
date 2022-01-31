@@ -6,7 +6,7 @@
 
 **CRSid:** md934
 
-![image](doc/letsRide.jpg)
+![image](Warp-firmware/doc/letsRide.jpg)
 ![image](doc/RPM.jpg)
 
 ## Building the application
